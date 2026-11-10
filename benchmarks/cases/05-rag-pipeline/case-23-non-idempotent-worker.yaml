@@ -1,0 +1,64 @@
+archbench:
+  spec_version: "0.1"
+  project: rag-document-pipeline-non-idempotent
+  description: Non-idempotent Consumer for Document
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process Document events.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: non-idempotent-alt
+      name: Unsafe Consumer Under Duplicate Delivery
+      description: Worker on at-least-once queue without idempotency.
+      components:
+        - id: doc-queue
+          name: Document Queue
+          type: message_queue
+          technology: Kafka
+          responsibility: Event streaming.
+          messaging:
+            overload_policy: bounded_retention
+            delivery_semantics: at_least_once
+        - id: doc-worker
+          name: Document Worker
+          type: background_worker
+          technology: Python
+          responsibility: Worker processing Document.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: false
+      connections:
+        - id: c23-user-queue
+          from: end-user
+          to: doc-queue
+          protocol: asynchronous
+          transport: kafka
+        - id: c23-queue-worker
+          from: doc-queue
+          to: doc-worker
+          protocol: asynchronous
+          transport: kafka

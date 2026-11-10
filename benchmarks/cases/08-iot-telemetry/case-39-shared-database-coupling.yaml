@@ -1,0 +1,82 @@
+archbench:
+  spec_version: "0.1"
+  project: iot-telemetry-shared-db
+  description: Shared Database Coupling for SensorReading
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Manage SensorReading state.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: shared-db-alt
+      name: Shared Database Anti-Pattern
+      description: Two services directly mutating the same database.
+      components:
+        - id: telemetry-read-svc
+          name: SensorReading Query Service
+          type: service
+          technology: Go
+          responsibility: Query service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: telemetry-write-svc
+          name: SensorReading Mutation Service
+          type: service
+          technology: Java
+          responsibility: Write service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: telemetry-master-db
+          name: SensorReading Shared Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Shared datastore.
+          data:
+            ownership: telemetry-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c39-user-read
+          from: end-user
+          to: telemetry-read-svc
+          protocol: synchronous
+          transport: https
+        - id: c39-user-write
+          from: end-user
+          to: telemetry-write-svc
+          protocol: synchronous
+          transport: https
+        - id: c39-read-db
+          from: telemetry-read-svc
+          to: telemetry-master-db
+          protocol: synchronous
+          transport: tcp
+        - id: c39-write-db
+          from: telemetry-write-svc
+          to: telemetry-master-db
+          protocol: synchronous
+          transport: tcp

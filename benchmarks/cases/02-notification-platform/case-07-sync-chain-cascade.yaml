@@ -1,0 +1,93 @@
+archbench:
+  spec_version: "0.1"
+  project: notification-sync-chain
+  description: Synchronous Cascade in Notification Dispatching
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems:
+      - id: sms-provider
+        name: Twilio SMS
+        category: external_provider
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Send notifications.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: sync-cascade
+      name: Synchronous Dispatch Chain
+      description: GW -> TemplateSvc -> RuleEngine -> ProviderRouter -> Provider (4 hops).
+      components:
+        - id: notify-gw
+          name: Notification Gateway
+          type: api_gateway
+          technology: Kong
+          responsibility: Ingress.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: template-svc
+          name: Template Engine Service
+          type: service
+          technology: Python
+          responsibility: Renders templates.
+          deployment:
+            replicas: 2
+        - id: rule-engine
+          name: Notification Rules Service
+          type: service
+          technology: Java
+          responsibility: User preferences.
+          deployment:
+            replicas: 2
+        - id: router-svc
+          name: Provider Router
+          type: service
+          technology: Go
+          responsibility: Downstream router.
+          deployment:
+            replicas: 2
+      connections:
+        - id: c07-user-gw
+          from: end-user
+          to: notify-gw
+          protocol: synchronous
+          transport: https
+        - id: c07-gw-tmpl
+          from: notify-gw
+          to: template-svc
+          protocol: synchronous
+          transport: http
+        - id: c07-tmpl-rules
+          from: template-svc
+          to: rule-engine
+          protocol: synchronous
+          transport: http
+        - id: c07-rules-router
+          from: rule-engine
+          to: router-svc
+          protocol: synchronous
+          transport: http
+        - id: c07-router-sms
+          from: router-svc
+          to: sms-provider
+          protocol: synchronous
+          transport: https

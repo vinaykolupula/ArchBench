@@ -1,0 +1,99 @@
+archbench:
+  spec_version: "0.1"
+  project: url-shortener-justified-cache
+  description: High Throughput Shortener with Justified Redis Cache
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Shorten and redirect URLs.
+      verification: architecture_check
+    - id: NFR-T-01
+      category: throughput
+      priority: must
+      statement: Handle 50k read rps.
+      verification: architecture_check
+      target:
+        rps: 50000
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: cached-architecture
+      name: Edge Cached Redirection Tier
+      description: High performance Redis cache absorbing 95% of redirection lookups.
+      components:
+        - id: api-gateway
+          name: API Gateway
+          type: api_gateway
+          technology: Envoy
+          responsibility: Routes ingress traffic.
+          requirements:
+            - REQ-01
+            - NFR-T-01
+          deployment:
+            replicas: 3
+        - id: shortener-svc
+          name: Shortener Service
+          type: service
+          technology: Node.js / Fastify
+          responsibility: Serves short code lookups.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 4
+        - id: redis-cache
+          name: Redis Cache
+          type: key_value_store
+          technology: Redis Cluster
+          responsibility: Caches hot URL mappings.
+          data:
+            ownership: shortener-domain
+          deployment:
+            replicas: 3
+        - id: postgres-db
+          name: PostgreSQL Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Persistent URL repository.
+          data:
+            ownership: shortener-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c02-user-gw
+          from: end-user
+          to: api-gateway
+          protocol: synchronous
+          transport: https
+        - id: c02-gw-svc
+          from: api-gateway
+          to: shortener-svc
+          protocol: synchronous
+          transport: http
+        - id: c02-svc-cache
+          from: shortener-svc
+          to: redis-cache
+          protocol: synchronous
+          transport: redis
+        - id: c02-svc-db
+          from: shortener-svc
+          to: postgres-db
+          protocol: synchronous
+          transport: postgres

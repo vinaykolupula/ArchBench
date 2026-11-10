@@ -1,0 +1,32 @@
+id: core.traffic.spike_surge
+version: 1
+name: 5x Peak Ingress Traffic Spike
+category: traffic
+level: analytical
+
+inputs:
+  baseline_peak_rps:
+    type: number
+    default: 1000
+  surge_multiplier:
+    type: number
+    default: 5
+  spike_duration_seconds:
+    type: integer
+    default: 300
+
+simulation:
+  spiked_arrival_rate: "inputs.baseline_peak_rps * inputs.surge_multiplier"
+  total_spike_requests: "simulation.spiked_arrival_rate * inputs.spike_duration_seconds"
+
+assertions:
+  - id: check-spike-volume
+    description: Spiked ingress volume must be calculated and bounded
+    condition: simulation.spiked_arrival_rate > inputs.baseline_peak_rps
+    severity: info
+
+learning:
+  concept: Horizontal Autoscaling & Surge Buffering
+  explanation: >
+    Traffic spikes can overwhelm synchronous compute instances if replicas are fixed.
+    Systems require horizontal pod autoscaling (HPA) or asynchronous rate leveling.

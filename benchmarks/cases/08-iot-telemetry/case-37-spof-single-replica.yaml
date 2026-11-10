@@ -1,0 +1,75 @@
+archbench:
+  spec_version: "0.1"
+  project: iot-telemetry-spof
+  description: SPOF in SensorReading Ingress
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process SensorReading requests.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: spof-alternative
+      name: Single Replica Articulation Point
+      description: Gateway with 1 replica; SPOF.
+      components:
+        - id: telemetry-gw
+          name: SensorReading Gateway
+          type: api_gateway
+          technology: Envoy
+          responsibility: Single gateway instance.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 1
+        - id: telemetry-svc
+          name: SensorReading Service
+          type: service
+          technology: Go
+          responsibility: Backend logic.
+          deployment:
+            replicas: 3
+        - id: telemetry-db
+          name: SensorReading Store
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Datastore.
+          data:
+            ownership: telemetry-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c37-user-gw
+          from: end-user
+          to: telemetry-gw
+          protocol: synchronous
+          transport: https
+        - id: c37-gw-svc
+          from: telemetry-gw
+          to: telemetry-svc
+          protocol: synchronous
+          transport: http
+        - id: c37-svc-db
+          from: telemetry-svc
+          to: telemetry-db
+          protocol: synchronous
+          transport: tcp

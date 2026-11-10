@@ -1,0 +1,119 @@
+archbench:
+  spec_version: "0.1"
+  project: rag-document-pipeline-optimal
+  description: Optimal Resilient Architecture for Document Processing
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process Document operations.
+      verification: architecture_check
+    - id: NFR-01
+      category: latency
+      priority: must
+      statement: p99 response < 50ms
+      verification: architecture_check
+      target:
+        p99_ms: 50
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: optimal-pipeline
+      name: Optimal Document Pipeline
+      description: Production-grade architecture with HA, outbox, idempotent worker,
+        and DLQ.
+      decisions:
+        - id: ADR-001
+          title: Transactional Outbox
+          choice: Outbox Pattern
+          context: Prevent dual write.
+          status: accepted
+      components:
+        - id: doc-api
+          name: Document API
+          type: service
+          technology: Go
+          responsibility: Ingress handler for Document.
+          requirements:
+            - REQ-01
+            - NFR-01
+          deployment:
+            replicas: 3
+        - id: doc-db
+          name: Document Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Stores Document records.
+          data:
+            ownership: doc-domain
+          deployment:
+            replicas: 2
+        - id: doc-queue
+          name: Document Queue
+          type: message_queue
+          technology: RabbitMQ
+          responsibility: Buffers async Document jobs.
+          messaging:
+            overload_policy: alert_and_drop_oldest
+            delivery_semantics: at_least_once
+        - id: doc-dlq
+          name: Document DLQ
+          type: message_queue
+          technology: RabbitMQ DLQ
+          responsibility: Quarantine queue.
+          messaging:
+            overload_policy: alert_on_call
+        - id: doc-worker
+          name: Document Worker
+          type: background_worker
+          technology: Rust
+          responsibility: Processes Document jobs.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: true
+            idempotency_key: doc_id
+            retry_policy:
+              max_attempts: 3
+              backoff: exponential
+              dead_letter_target: doc-dlq
+      connections:
+        - id: c21-user-api
+          from: end-user
+          to: doc-api
+          protocol: synchronous
+          transport: https
+        - id: c21-api-db
+          from: doc-api
+          to: doc-db
+          protocol: synchronous
+          transport: tcp
+        - id: c21-api-queue
+          from: doc-api
+          to: doc-queue
+          protocol: asynchronous
+          transport: amqp
+        - id: c21-queue-worker
+          from: doc-queue
+          to: doc-worker
+          protocol: asynchronous
+          transport: amqp

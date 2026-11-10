@@ -1,0 +1,29 @@
+{
+  "name": "@archbench/synthesis",
+  "version": "0.1.0",
+  "description": "Dynamic System Design Intake, AI Architectural Synthesis, and Multi-Alternative Benchmarking Engine for ArchBench",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@archbench/archspec": "workspace:*",
+    "@archbench/archeval": "workspace:*",
+    "@archbench/comparison-engine": "workspace:*",
+    "@archbench/core": "workspace:*",
+    "@archbench/graph-engine": "workspace:*",
+    "@archbench/scenario-engine": "workspace:*",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
+

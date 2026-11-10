@@ -1,0 +1,68 @@
+archbench:
+  spec_version: "0.1"
+  project: realtime-chat-unmapped-req
+  description: Unmapped Compliance Requirement for Message
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process Message operations.
+      verification: architecture_check
+    - id: REQ-COMPLY-01
+      category: functional
+      priority: must
+      statement: Audit all Message transactions for compliance.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: missing-req-mapping
+      name: Unmapped Requirement Architecture
+      description: Compliance req has no owning component.
+      components:
+        - id: chat-svc
+          name: Message Service
+          type: service
+          technology: Go
+          responsibility: Core handler.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: chat-db
+          name: Message Database
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Datastore.
+          data:
+            ownership: chat-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c20-user-svc
+          from: end-user
+          to: chat-svc
+          protocol: synchronous
+          transport: https
+        - id: c20-svc-db
+          from: chat-svc
+          to: chat-db
+          protocol: synchronous
+          transport: tcp

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@archbench/archspec": ["packages/archspec/src"],
+      "@archbench/graph-engine": ["packages/graph-engine/src"],
+      "@archbench/fitness-tests": ["packages/fitness-tests/src"],
+      "@archbench/archeval": ["packages/archeval/src"],
+      "@archbench/comparison-engine": ["packages/comparison-engine/src"],
+      "@archbench/learning-mode": ["packages/learning-mode/src"],
+      "@archbench/scenario-engine": ["packages/scenario-engine/src"],
+      "@archbench/report-engine": ["packages/report-engine/src"],
+      "@archbench/core": ["packages/core/src"]
+    }
+  },
+  "include": ["packages/*/src", "apps/*/src", "examples"]
+}
+

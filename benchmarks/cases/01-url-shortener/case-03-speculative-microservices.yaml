@@ -1,0 +1,121 @@
+archbench:
+  spec_version: "0.1"
+  project: url-shortener-speculative
+  description: Low-Traffic URL Shortener Overengineered with 5 Microservices
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Shorten URLs for small team.
+      verification: architecture_check
+    - id: NFR-01
+      category: throughput
+      priority: must
+      statement: Expected 2 requests per minute.
+      verification: architecture_check
+      target:
+        rps: 1
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: speculative-cluster
+      name: Distributed Kubernetes Mesh
+      description: Heavily fragmented microservices with unneeded event streaming.
+      components:
+        - id: ingress-gw
+          name: Ingress Gateway
+          type: api_gateway
+          technology: Kong
+          responsibility: Routes requests.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: encode-svc
+          name: Hash Encoder Service
+          type: service
+          technology: Rust
+          responsibility: Calculates base62 hashes.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: persist-svc
+          name: Persistence Service
+          type: service
+          technology: Go
+          responsibility: Writes to datastore.
+          deployment:
+            replicas: 2
+        - id: kafka-bus
+          name: Kafka Cluster
+          type: event_stream
+          technology: Apache Kafka
+          responsibility: Buffers URL events.
+          messaging:
+            overload_policy: drop_oldest
+            delivery_semantics: at_least_once
+        - id: analytics-svc
+          name: Analytics Service
+          type: service
+          technology: Python
+          responsibility: Processes click metrics.
+          deployment:
+            replicas: 2
+          behavior:
+            idempotent: false
+        - id: mongo-db
+          name: MongoDB Sharded Cluster
+          type: document_database
+          technology: MongoDB
+          responsibility: Stores documents.
+          data:
+            ownership: url-domain
+      connections:
+        - id: c03-user-gw
+          from: end-user
+          to: ingress-gw
+          protocol: synchronous
+          transport: https
+        - id: c03-gw-encode
+          from: ingress-gw
+          to: encode-svc
+          protocol: synchronous
+          transport: grpc
+        - id: c03-encode-persist
+          from: encode-svc
+          to: persist-svc
+          protocol: synchronous
+          transport: grpc
+        - id: c03-persist-db
+          from: persist-svc
+          to: mongo-db
+          protocol: synchronous
+          transport: tcp
+        - id: c03-persist-kafka
+          from: persist-svc
+          to: kafka-bus
+          protocol: asynchronous
+          transport: kafka
+        - id: c03-kafka-analytics
+          from: kafka-bus
+          to: analytics-svc
+          protocol: asynchronous
+          transport: kafka

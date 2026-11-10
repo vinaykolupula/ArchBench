@@ -1,0 +1,465 @@
+archbench:
+  spec_version: "0.1"
+  project: notification-platform
+  description: "A multi-channel notification delivery platform."
+  authors:
+    - "ArchBench Team"
+
+system:
+  context:
+    users:
+      - id: client-app
+        name: "Upstream Client Application"
+        description: "Services submitting notification delivery requests."
+    external_systems:
+      - id: email-gateway
+        name: "Third-Party Email Provider (SES / SendGrid)"
+        category: delivery_provider
+        description: "External API for sending email dispatches."
+      - id: sms-gateway
+        name: "Third-Party SMS Provider (Twilio)"
+        category: delivery_provider
+        description: "External API for transactional SMS messages."
+      - id: push-gateway
+        name: "Third-Party Push Provider (FCM / APNs)"
+        category: delivery_provider
+        description: "External service for mobile push notifications."
+
+  requirements:
+    - id: REQ-001
+      category: functional
+      priority: must
+      statement: "Accept notification requests over an authenticated REST API."
+      verification: architecture_check
+
+    - id: REQ-002
+      category: functional
+      priority: must
+      statement: "Deliver notifications through email, SMS, and push providers asynchronously."
+      verification: architecture_check
+
+    - id: REQ-003
+      category: functional
+      priority: should
+      statement: "Enforce per-user notification preferences before provider dispatch."
+      verification: architecture_check
+
+    - id: NFR-AVAIL-001
+      category: availability
+      priority: must
+      statement: "API acceptance tier must achieve 99.9% uptime over a 30-day window."
+      target:
+        availability_percent: 99.9
+      measurement_window: 30d
+      verification: scenario_and_slo_review
+
+    - id: NFR-THROUGHPUT-001
+      category: throughput
+      priority: must
+      statement: "Sustain peak ingress throughput of 5,000 notifications per second."
+      target:
+        notifications_per_second_peak: 5000
+        peak_duration_minutes: 10
+      verification: capacity_analysis
+
+  constraints:
+    - id: CON-001
+      category: team
+      statement: "Initial core engineering team consists of 3 developers."
+
+    - id: CON-002
+      category: deployment
+      statement: "Single cloud region deployment for initial production release."
+
+  assumptions:
+    - id: ASM-001
+      statement: "Peak arrival rate of 5,000 req/sec occurs for at most 10 minutes continuously."
+      status: assumed
+      confidence: high
+      impact_if_false: high
+      validation: "Verify historical product launch metrics."
+
+    - id: ASM-002
+      statement: "Downstream email/SMS providers may experience transient latencies up to 15 seconds."
+      status: confirmed
+      confidence: high
+      impact_if_false: high
+
+architecture:
+  alternatives:
+    - id: modular-monolith
+      name: "Modular Monolith with Queue-Backed Asynchronous Workers"
+      description: "Decouples synchronous HTTP acceptance from slow third-party provider calls using a managed message queue."
+      components:
+        - id: api-service
+          name: "Notification API Service"
+          type: application
+          technology: "Node.js / Express"
+          responsibility: "Validate requests, check authentication, and enqueue delivery tasks."
+          requirements:
+            - REQ-001
+            - NFR-THROUGHPUT-001
+          deployment:
+            replicas: 4
+            region: "us-east-1"
+            platform: "AWS ECS Fargate"
+
+        - id: notification-db
+          name: "Authoritative Relational Database"
+          type: relational_database
+          technology: "PostgreSQL"
+          responsibility: "Persist notification state, delivery logs, and recipient preferences."
+          requirements:
+            - REQ-001
+            - REQ-003
+          data:
+            ownership: "notification-domain"
+            storage_type: "ssd"
+            retention: "90d"
+            backup_frequency: "daily"
+
+        - id: delivery-queue
+          name: "Delivery Job Queue"
+          type: message_queue
+          technology: "Amazon SQS / RabbitMQ"
+          responsibility: "Buffer delivery tasks and decouple API tier from provider latency."
+          requirements:
+            - REQ-002
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "bounded_backlog_with_cloudwatch_alarm"
+            retention_period: "4d"
+
+        - id: delivery-worker
+          name: "Notification Dispatch Worker Pool"
+          type: background_worker
+          technology: "Node.js Workers"
+          responsibility: "Poll queue, enforce user preferences, and execute provider delivery with retry handling."
+          requirements:
+            - REQ-002
+            - REQ-003
+          deployment:
+            replicas: 8
+            region: "us-east-1"
+            platform: "AWS ECS Fargate"
+          behavior:
+            idempotent: true
+            idempotency_key: "notification_id"
+            retry_policy:
+              max_attempts: 5
+              backoff: exponential
+              dead_letter_target: "delivery-dlq"
+
+        - id: delivery-dlq
+          name: "Dead Letter Queue"
+          type: message_queue
+          technology: "Amazon SQS DLQ"
+          responsibility: "Store permanently failed notifications after retry exhaustion."
+          requirements:
+            - REQ-002
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "alert_on_message_present"
+
+      connections:
+        - id: conn-client-to-api
+          from: client-app
+          to: api-service
+          protocol: synchronous
+          transport: "https"
+          purpose: "Notification creation requests."
+          timeout_ms: 3000
+
+        - id: conn-api-to-db
+          from: api-service
+          to: notification-db
+          protocol: synchronous
+          transport: "tcp"
+          purpose: "Store initial notification entity."
+          timeout_ms: 1000
+
+        - id: conn-api-to-queue
+          from: api-service
+          to: delivery-queue
+          protocol: asynchronous
+          transport: "https"
+          purpose: "Enqueue delivery job."
+          timeout_ms: 1000
+
+        - id: conn-worker-to-queue
+          from: delivery-queue
+          to: delivery-worker
+          protocol: asynchronous
+          transport: "https"
+          purpose: "Pull delivery work."
+
+        - id: conn-worker-to-db
+          from: delivery-worker
+          to: notification-db
+          protocol: synchronous
+          transport: "tcp"
+          purpose: "Query user preferences and update delivery status."
+          timeout_ms: 1000
+
+        - id: conn-worker-to-email
+          from: delivery-worker
+          to: email-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Send email payload."
+          timeout_ms: 5000
+          retry_policy:
+            max_attempts: 5
+            backoff: exponential
+
+        - id: conn-worker-to-sms
+          from: delivery-worker
+          to: sms-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Send SMS dispatch."
+          timeout_ms: 4000
+          retry_policy:
+            max_attempts: 3
+            backoff: exponential
+
+        - id: conn-worker-to-push
+          from: delivery-worker
+          to: push-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Send push notification."
+          timeout_ms: 3000
+          retry_policy:
+            max_attempts: 3
+            backoff: exponential
+
+        - id: conn-worker-to-dlq
+          from: delivery-worker
+          to: delivery-dlq
+          protocol: asynchronous
+          transport: "https"
+          purpose: "Dead-letter exhausted delivery failures."
+
+      decisions:
+        - id: ADR-001
+          title: "Asynchronous Provider Delivery via Managed Queue"
+          status: accepted
+          context: "Third-party delivery providers (email/SMS) have variable latencies and outage risks that must not block synchronous API ingestion."
+          choice: "Deploy a managed message queue between the API ingestion service and dedicated background worker processes."
+          alternatives:
+            - "Direct synchronous provider calls from API handler."
+            - "Polling relational database tables for pending jobs."
+          consequences:
+            - "API requests return immediately with an acknowledgment ID."
+            - "Requires workers to handle at-least-once duplicate delivery using idempotent notification IDs."
+          requirements:
+            - REQ-002
+            - NFR-AVAIL-001
+          evolution_triggers:
+            - id: TRIG-001
+              metric: "queue_backlog_messages"
+              threshold: "> 100000"
+              condition: "Sustained queue buildup during multi-hour external provider outages."
+              action: "Scale worker concurrency and implement adaptive provider rate-limiting."
+
+        - id: ADR-002
+          title: "Transactional Outbox Pattern for Queue Publishing"
+          status: accepted
+          context: "Writing to notification-db and delivery-queue directly from API handler risks dual write inconsistencies during network partitions or crashes."
+          choice: "Adopt Transactional Outbox pattern: write notification state and outbox record atomically in Postgres; an asynchronous relay publishes to delivery-queue."
+          alternatives:
+            - "Two-phase commit (2PC) between Postgres and SQS."
+            - "Best-effort direct dual write with periodic reconciliation."
+          consequences:
+            - "Guarantees zero lost messages if API process crashes after DB commit."
+            - "Introduces minor outbox relay latency (<50ms)."
+          requirements:
+            - REQ-001
+            - REQ-002
+
+      workload:
+        peak_requests_per_second: 5000
+        peak_duration_minutes: 10
+        average_payload_kb: 2
+
+      objectives:
+        availability_percent: 99.9
+        delivery_latency_p95_seconds: 30
+        rto_minutes: 60
+        rpo_minutes: 15
+
+    - id: distributed-microservices
+      name: "Distributed Microservices with Kafka Event Streaming"
+      description: "Decomposes notification processing into independently deployable domain services coordinated via Apache Kafka."
+      components:
+        - id: api-gateway
+          name: "Edge API Gateway"
+          type: api_gateway
+          technology: "Kong / Envoy"
+          responsibility: "Ingress TLS termination, client authentication, and rate limiting."
+          requirements:
+            - REQ-001
+            - NFR-THROUGHPUT-001
+          deployment:
+            replicas: 4
+
+        - id: notification-orchestrator
+          name: "Notification Orchestration Service"
+          type: service
+          technology: "Go / gRPC"
+          responsibility: "Orchestrate notification flow and publish events to Kafka."
+          requirements:
+            - REQ-001
+            - REQ-002
+          deployment:
+            replicas: 6
+
+        - id: preference-service
+          name: "User Preference Service"
+          type: service
+          technology: "Node.js / Express"
+          responsibility: "Manage and query user channel opt-in/opt-out preferences."
+          requirements:
+            - REQ-003
+          deployment:
+            replicas: 4
+
+        - id: preference-db
+          name: "Preference Relational DB"
+          type: relational_database
+          technology: "PostgreSQL"
+          responsibility: "Authoritative preference persistence."
+          requirements:
+            - REQ-003
+          data:
+            ownership: "preference-domain"
+
+        - id: notification-event-stream
+          name: "Notification Event Stream"
+          type: event_stream
+          technology: "Apache Kafka"
+          responsibility: "Partitioned, replayable event log for delivery jobs."
+          requirements:
+            - REQ-002
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "partition_rebalancing_and_retention_prune"
+
+        - id: provider-dispatch-worker
+          name: "External Provider Dispatch Worker"
+          type: background_worker
+          technology: "Go Kafka Consumer"
+          responsibility: "Consume partitioned delivery events and dispatch to third-party gateways."
+          requirements:
+            - REQ-002
+          deployment:
+            replicas: 10
+          behavior:
+            idempotent: true
+            idempotency_key: "notification_id"
+            retry_policy:
+              max_attempts: 4
+              backoff: exponential
+              dead_letter_target: "dispatch-dlq"
+
+        - id: dispatch-dlq
+          name: "Dispatch Dead Letter Stream"
+          type: event_stream
+          technology: "Kafka DLQ Topic"
+          responsibility: "Quarantine un-deliverable payloads."
+          requirements:
+            - REQ-002
+
+      connections:
+        - id: conn-client-to-gw
+          from: client-app
+          to: api-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Notification request ingestion."
+
+        - id: conn-gw-to-orchestrator
+          from: api-gateway
+          to: notification-orchestrator
+          protocol: synchronous
+          transport: "grpc"
+          purpose: "Route validated request."
+
+        - id: conn-orchestrator-to-pref
+          from: notification-orchestrator
+          to: preference-service
+          protocol: synchronous
+          transport: "grpc"
+          purpose: "Query user notification preference."
+
+        - id: conn-pref-to-db
+          from: preference-service
+          to: preference-db
+          protocol: synchronous
+          transport: "tcp"
+          purpose: "Read preference rows."
+
+        - id: conn-orchestrator-to-stream
+          from: notification-orchestrator
+          to: notification-event-stream
+          protocol: asynchronous
+          transport: "kafka-protocol"
+          purpose: "Publish delivery event."
+
+        - id: conn-stream-to-worker
+          from: notification-event-stream
+          to: provider-dispatch-worker
+          protocol: asynchronous
+          transport: "kafka-protocol"
+          purpose: "Consume partitioned delivery jobs."
+
+        - id: conn-worker-to-email-gw
+          from: provider-dispatch-worker
+          to: email-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Send email."
+
+        - id: conn-worker-to-sms-gw
+          from: provider-dispatch-worker
+          to: sms-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Send SMS."
+
+        - id: conn-worker-to-push-gw
+          from: provider-dispatch-worker
+          to: push-gateway
+          protocol: synchronous
+          transport: "https"
+          purpose: "Send Push."
+
+        - id: conn-worker-to-dlq-stream
+          from: provider-dispatch-worker
+          to: dispatch-dlq
+          protocol: asynchronous
+          transport: "kafka-protocol"
+          purpose: "Route exhausted failures to DLQ topic."
+
+      decisions:
+        - id: ADR-DIST-001
+          title: "Microservices Decomposition with Kafka Partitioning"
+          status: proposed
+          context: "Team scaling may justify splitting delivery dispatch from API ingress with event replay."
+          choice: "Deploy Kafka with separate microservices."
+          requirements:
+            - REQ-001
+            - REQ-002
+
+      workload:
+        peak_requests_per_second: 5000
+        peak_duration_minutes: 10
+        average_payload_kb: 2
+
+      objectives:
+        availability_percent: 99.95
+        delivery_latency_p95_seconds: 15
+        rto_minutes: 30
+        rpo_minutes: 5
+

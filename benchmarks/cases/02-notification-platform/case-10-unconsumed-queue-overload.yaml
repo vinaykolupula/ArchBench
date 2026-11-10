@@ -1,0 +1,60 @@
+archbench:
+  spec_version: "0.1"
+  project: notification-unconsumed-queue
+  description: Producer writes to queue with zero consumers
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Buffer incoming events.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: orphan-queue-variant
+      name: Orphan Queue Architecture
+      description: Ingress writes to event queue without consumer and without overload
+        policy.
+      components:
+        - id: ingress-api
+          name: Ingress API
+          type: service
+          technology: Go
+          responsibility: Ingress.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: orphan-queue
+          name: Pending Events Queue
+          type: message_queue
+          technology: RabbitMQ
+          responsibility: Buffer without consumers.
+      connections:
+        - id: c10-user-api
+          from: end-user
+          to: ingress-api
+          protocol: synchronous
+          transport: https
+        - id: c10-api-queue
+          from: ingress-api
+          to: orphan-queue
+          protocol: asynchronous
+          transport: amqp

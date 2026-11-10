@@ -1,0 +1,47 @@
+id: scalability.traffic.burst
+version: 1
+name: 10x Ingress Traffic Surge Over 5 Minutes
+category: traffic
+level: analytical
+
+preconditions:
+  required_components:
+    - message_queue
+
+inputs:
+  baseline_rps:
+    type: number
+    default: 2000
+  surge_multiplier:
+    type: number
+    default: 10
+  burst_duration_sec:
+    type: integer
+    default: 300
+  buffer_capacity_messages:
+    type: number
+    default: 10000000
+
+simulation:
+  surge_rps: "inputs.baseline_rps * inputs.surge_multiplier"
+  total_burst_messages: "simulation.surge_rps * inputs.burst_duration_sec"
+  buffer_utilization_ratio: "simulation.total_burst_messages / inputs.buffer_capacity_messages"
+
+assertions:
+  - id: check-buffer-headroom
+    description: Buffer capacity must not be exhausted during a 10x traffic burst
+    condition: simulation.buffer_utilization_ratio <= 1.0
+    severity: critical
+
+  - id: check-surge-volume
+    description: Total burst volume must be quantified for autoscaling provisioning
+    condition: simulation.total_burst_messages > 0
+    severity: info
+
+learning:
+  concept: Traffic Bursts & Queue Headroom
+  explanation: >
+    Marketing campaigns, breaking news alerts, or external webhook floods create rapid traffic
+    surges. Message brokers must have sufficient provisioned storage and throughput headroom to
+    absorb incoming work while autoscaling triggers ramp up worker processing capacity.
+

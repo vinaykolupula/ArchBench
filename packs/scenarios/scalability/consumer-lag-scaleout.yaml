@@ -1,0 +1,50 @@
+id: scalability.queue.consumer_lag_scaleout
+version: 1
+name: Worker Autoscaling Response Under Queue Backlog Accumulation
+category: queue
+level: analytical
+
+preconditions:
+  required_components:
+    - message_queue
+    - background_worker
+
+inputs:
+  arrival_rate:
+    type: number
+    default: 10000
+  base_worker_capacity:
+    type: number
+    default: 4000
+  autoscale_scaleout_factor:
+    type: number
+    default: 3
+  scaleout_lag_seconds:
+    type: integer
+    default: 180
+
+simulation:
+  lag_growth_rate: "inputs.arrival_rate - inputs.base_worker_capacity"
+  peak_backlog_before_scaleout: "simulation.lag_growth_rate * inputs.scaleout_lag_seconds"
+  scaled_worker_capacity: "inputs.base_worker_capacity * inputs.autoscale_scaleout_factor"
+  drain_rate: "simulation.scaled_worker_capacity - inputs.arrival_rate"
+  drain_time_seconds: "simulation.peak_backlog_before_scaleout / simulation.drain_rate"
+
+assertions:
+  - id: check-scaleout-drain-capacity
+    description: Scaled worker capacity must strictly exceed arrival rate to allow backlog drainage
+    condition: simulation.scaled_worker_capacity > inputs.arrival_rate
+    severity: critical
+
+  - id: check-drain-duration
+    description: Accumulated backlog must drain within 1,800 seconds after scaleout completes
+    condition: simulation.drain_time_seconds <= 1800
+    severity: warning
+
+learning:
+  concept: Horizontal Worker Autoscaling & Lag Recovery
+  explanation: >
+    When incoming traffic outpaces worker processing capacity, autoscaling must not only match
+    the incoming rate, but exceed it with enough margin (drain rate) to clear the accumulated
+    backlog within acceptable recovery time boundaries.
+

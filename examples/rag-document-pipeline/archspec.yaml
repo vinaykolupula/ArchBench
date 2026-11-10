@@ -1,0 +1,270 @@
+archbench:
+  spec_version: "0.1"
+  project: rag-document-pipeline
+  description: "Enterprise Retrieval-Augmented Generation (RAG) Document Ingestion and Query Architecture."
+  authors:
+    - "ArchBench Team"
+
+system:
+  context:
+    users:
+      - id: enterprise-user
+        name: "Enterprise Knowledge Worker"
+        description: "Users uploading documents and querying the knowledge base."
+    external_systems:
+      - id: embedding-api
+        name: "External Embedding Provider (OpenAI / Vertex AI)"
+        category: external_provider
+        description: "API for generating 1536-dimensional vector embeddings."
+      - id: llm-api
+        name: "External Generation LLM (Claude / GPT-4)"
+        category: external_provider
+        description: "Large Language Model used to synthesize answers from retrieved context."
+
+  requirements:
+    - id: REQ-001
+      category: functional
+      priority: must
+      statement: "Ingest and parse multi-format documents (PDF, DOCX, Markdown) into semantic text chunks."
+      verification: architecture_check
+
+    - id: REQ-002
+      category: functional
+      priority: must
+      statement: "Generate dense vector embeddings for text chunks and index them in a vector database."
+      verification: architecture_check
+
+    - id: REQ-003
+      category: functional
+      priority: must
+      statement: "Retrieve relevant context chunks via hybrid vector search and generate grounded answers."
+      verification: architecture_check
+
+    - id: NFR-LATENCY-001
+      category: latency
+      priority: must
+      statement: "Query retrieval and generation response time must be under 3.5 seconds at p95."
+      target:
+        latency_p95_seconds: 3.5
+      verification: scenario_and_slo_review
+
+    - id: NFR-DURABILITY-001
+      category: durability
+      priority: must
+      statement: "Raw uploaded source documents must have 99.999999999% durability."
+      target:
+        durability_percent: 99.999999999
+      verification: architecture_check
+
+  constraints:
+    - id: CON-001
+      category: deployment
+      statement: "Vector database must support metadata filtering by tenant and role-based access control."
+
+  assumptions:
+    - id: ASM-001
+      statement: "Average document size is 2MB with approximately 40 text chunks per document."
+      status: assumed
+      confidence: high
+      impact_if_false: medium
+
+architecture:
+  alternatives:
+    - id: asynchronous-rag-pipeline
+      name: "Asynchronous Chunking Pipeline with Vector Search and LLM Synthesis"
+      description: "Decouples ingestion compute from low-latency query retrieval via object storage and background workers."
+      components:
+        - id: query-api
+          name: "RAG Query API Gateway"
+          type: application
+          technology: "FastAPI / Python"
+          responsibility: "Handle user queries, orchestrate vector retrieval, prompt assembly, and LLM streaming."
+          requirements:
+            - REQ-003
+            - NFR-LATENCY-001
+          deployment:
+            replicas: 6
+            platform: "Cloud Run / EKS"
+
+        - id: raw-doc-storage
+          name: "Raw Document Object Storage"
+          type: object_storage
+          technology: "AWS S3 / GCS"
+          responsibility: "Immutable storage for uploaded source documents and parsing artifacts."
+          requirements:
+            - REQ-001
+            - NFR-DURABILITY-001
+          data:
+            ownership: "document-domain"
+            storage_type: "object"
+            retention: "7y"
+
+        - id: ingestion-queue
+          name: "Document Ingestion Queue"
+          type: message_queue
+          technology: "AWS SQS"
+          responsibility: "Queue background document parsing and embedding jobs."
+          requirements:
+            - REQ-001
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "alert_and_backpressure_uploads"
+
+        - id: ingestion-worker
+          name: "Ingestion and Chunking Worker"
+          type: background_worker
+          technology: "Python / Celery"
+          responsibility: "Extract document text, apply recursive character chunking, call embedding API, and persist vectors."
+          requirements:
+            - REQ-001
+            - REQ-002
+          deployment:
+            replicas: 12
+          behavior:
+            idempotent: true
+            idempotency_key: "doc_hash_and_chunk_idx"
+            retry_policy:
+              max_attempts: 3
+              backoff: exponential
+              dead_letter_target: "ingestion-dlq"
+
+        - id: ingestion-dlq
+          name: "Ingestion Dead Letter Queue"
+          type: message_queue
+          technology: "AWS SQS DLQ"
+          responsibility: "Quarantine unparseable or corrupted documents after retry exhaustion."
+          requirements:
+            - REQ-001
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "alert_on_dlq_depth"
+
+        - id: vector-database
+          name: "Vector Store"
+          type: search_engine
+          technology: "Qdrant / pgvector"
+          responsibility: "Index text embeddings and perform HNSW cosine similarity search."
+          requirements:
+            - REQ-002
+            - REQ-003
+          data:
+            ownership: "vector-index-domain"
+            storage_type: "ssd"
+
+      connections:
+        - id: conn-user-to-storage
+          from: enterprise-user
+          to: raw-doc-storage
+          protocol: synchronous
+          transport: "https"
+          purpose: "Direct presigned upload of source documents."
+
+        - id: conn-storage-to-queue
+          from: raw-doc-storage
+          to: ingestion-queue
+          protocol: asynchronous
+          transport: "sns-sqs"
+          purpose: "ObjectCreated event notification."
+
+        - id: conn-worker-to-queue
+          from: ingestion-queue
+          to: ingestion-worker
+          protocol: asynchronous
+          transport: "https"
+          purpose: "Pull document processing jobs."
+
+        - id: conn-worker-to-storage
+          from: ingestion-worker
+          to: raw-doc-storage
+          protocol: synchronous
+          transport: "https"
+          purpose: "Download raw document for OCR and parsing."
+          timeout_ms: 10000
+
+        - id: conn-worker-to-embedding
+          from: ingestion-worker
+          to: embedding-api
+          protocol: synchronous
+          transport: "https"
+          purpose: "Generate batch embeddings for chunks."
+          timeout_ms: 8000
+          retry_policy:
+            max_attempts: 3
+            backoff: exponential
+
+        - id: conn-worker-to-vector-db
+          from: ingestion-worker
+          to: vector-database
+          protocol: synchronous
+          transport: "grpc"
+          purpose: "Upsert vector embeddings and metadata chunks."
+          timeout_ms: 3000
+
+        - id: conn-worker-to-dlq
+          from: ingestion-worker
+          to: ingestion-dlq
+          protocol: asynchronous
+          transport: "https"
+          purpose: "Route unparseable poison documents to DLQ."
+
+        - id: conn-user-to-query
+          from: enterprise-user
+          to: query-api
+          protocol: synchronous
+          transport: "https"
+          purpose: "Natural language query submission."
+
+        - id: conn-query-to-embedding
+          from: query-api
+          to: embedding-api
+          protocol: synchronous
+          transport: "https"
+          purpose: "Embed user query vector."
+          timeout_ms: 1500
+
+        - id: conn-query-to-vector-db
+          from: query-api
+          to: vector-database
+          protocol: synchronous
+          transport: "grpc"
+          purpose: "ANN similarity search for top-k chunks."
+          timeout_ms: 500
+
+        - id: conn-query-to-llm
+          from: query-api
+          to: llm-api
+          protocol: synchronous
+          transport: "https"
+          purpose: "Stream generated answer grounded in retrieved chunks."
+          timeout_ms: 15000
+
+      decisions:
+        - id: ADR-001
+          title: "Asynchronous Queue-Decoupled Document Ingestion"
+          status: accepted
+          context: "Extracting text, chunking, and embedding large documents (100+ pages) takes 10-60 seconds, which cannot happen in a synchronous upload request."
+          choice: "Clients upload directly to Object Storage via presigned URLs. An ObjectCreated event triggers an asynchronous worker via SQS."
+          alternatives:
+            - "Upload document directly to API server and process in-memory."
+          consequences:
+            - "Uploads complete in milliseconds without exhausting API memory."
+            - "Requires client to poll or receive WebSocket notification when document indexing is complete."
+          requirements:
+            - REQ-001
+            - REQ-002
+          evolution_triggers:
+            - id: TRIG-RAG-001
+              metric: "ingestion_lag_minutes"
+              threshold: "> 15m"
+              condition: "High document upload volume overwhelms embedding worker pool."
+              action: "Scale ingestion worker pool horizontally or leverage dedicated self-hosted embedding endpoints."
+
+      workload:
+        daily_uploaded_documents: 10000
+        queries_per_second_peak: 250
+        average_chunks_per_document: 40
+
+      objectives:
+        latency_p95_seconds: 3.5
+        durability_percent: 99.999999999
+

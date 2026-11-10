@@ -1,0 +1,119 @@
+archbench:
+  spec_version: "0.1"
+  project: multitenant-saas-optimal
+  description: Optimal Resilient Architecture for TenantWorkspace Processing
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process TenantWorkspace operations.
+      verification: architecture_check
+    - id: NFR-01
+      category: latency
+      priority: must
+      statement: p99 response < 50ms
+      verification: architecture_check
+      target:
+        p99_ms: 50
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: optimal-pipeline
+      name: Optimal TenantWorkspace Pipeline
+      description: Production-grade architecture with HA, outbox, idempotent worker,
+        and DLQ.
+      decisions:
+        - id: ADR-001
+          title: Transactional Outbox
+          choice: Outbox Pattern
+          context: Prevent dual write.
+          status: accepted
+      components:
+        - id: tenant-api
+          name: TenantWorkspace API
+          type: service
+          technology: Go
+          responsibility: Ingress handler for TenantWorkspace.
+          requirements:
+            - REQ-01
+            - NFR-01
+          deployment:
+            replicas: 3
+        - id: tenant-db
+          name: TenantWorkspace Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Stores TenantWorkspace records.
+          data:
+            ownership: tenant-domain
+          deployment:
+            replicas: 2
+        - id: tenant-queue
+          name: TenantWorkspace Queue
+          type: message_queue
+          technology: RabbitMQ
+          responsibility: Buffers async TenantWorkspace jobs.
+          messaging:
+            overload_policy: alert_and_drop_oldest
+            delivery_semantics: at_least_once
+        - id: tenant-dlq
+          name: TenantWorkspace DLQ
+          type: message_queue
+          technology: RabbitMQ DLQ
+          responsibility: Quarantine queue.
+          messaging:
+            overload_policy: alert_on_call
+        - id: tenant-worker
+          name: TenantWorkspace Worker
+          type: background_worker
+          technology: Rust
+          responsibility: Processes TenantWorkspace jobs.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: true
+            idempotency_key: tenant_id
+            retry_policy:
+              max_attempts: 3
+              backoff: exponential
+              dead_letter_target: tenant-dlq
+      connections:
+        - id: c41-user-api
+          from: end-user
+          to: tenant-api
+          protocol: synchronous
+          transport: https
+        - id: c41-api-db
+          from: tenant-api
+          to: tenant-db
+          protocol: synchronous
+          transport: tcp
+        - id: c41-api-queue
+          from: tenant-api
+          to: tenant-queue
+          protocol: asynchronous
+          transport: amqp
+        - id: c41-queue-worker
+          from: tenant-queue
+          to: tenant-worker
+          protocol: asynchronous
+          transport: amqp

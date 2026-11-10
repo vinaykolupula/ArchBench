@@ -1,0 +1,119 @@
+archbench:
+  spec_version: "0.1"
+  project: iot-telemetry-optimal
+  description: Optimal Resilient Architecture for SensorReading Processing
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process SensorReading operations.
+      verification: architecture_check
+    - id: NFR-01
+      category: latency
+      priority: must
+      statement: p99 response < 50ms
+      verification: architecture_check
+      target:
+        p99_ms: 50
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: optimal-pipeline
+      name: Optimal SensorReading Pipeline
+      description: Production-grade architecture with HA, outbox, idempotent worker,
+        and DLQ.
+      decisions:
+        - id: ADR-001
+          title: Transactional Outbox
+          choice: Outbox Pattern
+          context: Prevent dual write.
+          status: accepted
+      components:
+        - id: telemetry-api
+          name: SensorReading API
+          type: service
+          technology: Go
+          responsibility: Ingress handler for SensorReading.
+          requirements:
+            - REQ-01
+            - NFR-01
+          deployment:
+            replicas: 3
+        - id: telemetry-db
+          name: SensorReading Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Stores SensorReading records.
+          data:
+            ownership: telemetry-domain
+          deployment:
+            replicas: 2
+        - id: telemetry-queue
+          name: SensorReading Queue
+          type: message_queue
+          technology: RabbitMQ
+          responsibility: Buffers async SensorReading jobs.
+          messaging:
+            overload_policy: alert_and_drop_oldest
+            delivery_semantics: at_least_once
+        - id: telemetry-dlq
+          name: SensorReading DLQ
+          type: message_queue
+          technology: RabbitMQ DLQ
+          responsibility: Quarantine queue.
+          messaging:
+            overload_policy: alert_on_call
+        - id: telemetry-worker
+          name: SensorReading Worker
+          type: background_worker
+          technology: Rust
+          responsibility: Processes SensorReading jobs.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: true
+            idempotency_key: telemetry_id
+            retry_policy:
+              max_attempts: 3
+              backoff: exponential
+              dead_letter_target: telemetry-dlq
+      connections:
+        - id: c36-user-api
+          from: end-user
+          to: telemetry-api
+          protocol: synchronous
+          transport: https
+        - id: c36-api-db
+          from: telemetry-api
+          to: telemetry-db
+          protocol: synchronous
+          transport: tcp
+        - id: c36-api-queue
+          from: telemetry-api
+          to: telemetry-queue
+          protocol: asynchronous
+          transport: amqp
+        - id: c36-queue-worker
+          from: telemetry-queue
+          to: telemetry-worker
+          protocol: asynchronous
+          transport: amqp

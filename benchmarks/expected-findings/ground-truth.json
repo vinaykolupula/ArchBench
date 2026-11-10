@@ -1,0 +1,665 @@
+{
+  "case-01-optimal-simple": {
+    "id": "case-01-optimal-simple",
+    "archetype": "01-url-shortener",
+    "category": "optimal",
+    "title": "Optimal Modular URL Shortener",
+    "description": "Stateless app with 3 replicas and primary database; clean 0 findings.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/01-url-shortener/case-01-optimal-simple.yaml"
+  },
+  "case-02-justified-cache": {
+    "id": "case-02-justified-cache",
+    "archetype": "01-url-shortener",
+    "category": "optimal",
+    "title": "Justified Caching URL Shortener",
+    "description": "Redis cluster backed by 50k rps NFR; clean 0 findings.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/01-url-shortener/case-02-justified-cache.yaml"
+  },
+  "case-03-speculative-microservices": {
+    "id": "case-03-speculative-microservices",
+    "archetype": "01-url-shortener",
+    "category": "speculative",
+    "title": "Speculative Microservices Shortener",
+    "description": "Speculative architecture with multiple flaws: unmapped NFR, deep sync chain, non-idempotent consumer, and dual-write without outbox.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001",
+      "STRUC-001",
+      "REL-002",
+      "DATA-001"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1,
+      "warning": 2,
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/01-url-shortener/case-03-speculative-microservices.yaml"
+  },
+  "case-04-unbounded-retries": {
+    "id": "case-04-unbounded-retries",
+    "archetype": "01-url-shortener",
+    "category": "flawed",
+    "title": "Unbounded Retries URL Shortener",
+    "description": "Triggers REL-001 (excessive retries) and REL-003 (no DLQ).",
+    "expectedFindingRuleIds": [
+      "REL-001",
+      "REL-003"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 2
+    },
+    "relativeFilePath": "benchmarks/cases/01-url-shortener/case-04-unbounded-retries.yaml"
+  },
+  "case-05-sync-chain-cascade": {
+    "id": "case-05-sync-chain-cascade",
+    "archetype": "01-url-shortener",
+    "category": "flawed",
+    "title": "Synchronous Chain Cascade Shortener",
+    "description": "Triggers STRUC-001 due to 4 synchronous hops.",
+    "expectedFindingRuleIds": [
+      "STRUC-001"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/01-url-shortener/case-05-sync-chain-cascade.yaml"
+  },
+  "case-06-production-grade": {
+    "id": "case-06-production-grade",
+    "archetype": "02-notification-platform",
+    "category": "optimal",
+    "title": "Production Grade Notification Platform",
+    "description": "Fully compliant async architecture with Outbox ADR, DLQ, and idempotent worker.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/02-notification-platform/case-06-production-grade.yaml"
+  },
+  "case-07-sync-chain-cascade": {
+    "id": "case-07-sync-chain-cascade",
+    "archetype": "02-notification-platform",
+    "category": "flawed",
+    "title": "Synchronous Cascade Notification Platform",
+    "description": "Triggers STRUC-001 (synchronous chain to external provider).",
+    "expectedFindingRuleIds": [
+      "STRUC-001"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/02-notification-platform/case-07-sync-chain-cascade.yaml"
+  },
+  "case-08-dual-write-no-outbox": {
+    "id": "case-08-dual-write-no-outbox",
+    "archetype": "02-notification-platform",
+    "category": "flawed",
+    "title": "Dual Write Notification Platform",
+    "description": "Triggers DATA-001 (dual write without Outbox).",
+    "expectedFindingRuleIds": [
+      "DATA-001"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/02-notification-platform/case-08-dual-write-no-outbox.yaml"
+  },
+  "case-09-missing-dlq-quarantine": {
+    "id": "case-09-missing-dlq-quarantine",
+    "archetype": "02-notification-platform",
+    "category": "flawed",
+    "title": "Missing DLQ Notification Platform",
+    "description": "Triggers REL-003 (worker retries without dead_letter_target).",
+    "expectedFindingRuleIds": [
+      "REL-003"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/02-notification-platform/case-09-missing-dlq-quarantine.yaml"
+  },
+  "case-10-unconsumed-queue-overload": {
+    "id": "case-10-unconsumed-queue-overload",
+    "archetype": "02-notification-platform",
+    "category": "flawed",
+    "title": "Unconsumed Queue Notification Platform",
+    "description": "Triggers SCAL-001 (unconsumed queue + missing overload policy).",
+    "expectedFindingRuleIds": [
+      "SCAL-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1,
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/02-notification-platform/case-10-unconsumed-queue-overload.yaml"
+  },
+  "case-11-optimal-resilient": {
+    "id": "case-11-optimal-resilient",
+    "archetype": "03-ecommerce-checkout",
+    "category": "optimal",
+    "title": "Optimal Order Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/03-ecommerce-checkout/case-11-optimal-resilient.yaml"
+  },
+  "case-12-spof-single-replica": {
+    "id": "case-12-spof-single-replica",
+    "archetype": "03-ecommerce-checkout",
+    "category": "flawed",
+    "title": "SPOF Order Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/03-ecommerce-checkout/case-12-spof-single-replica.yaml"
+  },
+  "case-13-non-idempotent-worker": {
+    "id": "case-13-non-idempotent-worker",
+    "archetype": "03-ecommerce-checkout",
+    "category": "flawed",
+    "title": "Non-Idempotent Order Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/03-ecommerce-checkout/case-13-non-idempotent-worker.yaml"
+  },
+  "case-14-shared-database-coupling": {
+    "id": "case-14-shared-database-coupling",
+    "archetype": "03-ecommerce-checkout",
+    "category": "flawed",
+    "title": "Shared DB Coupling Order",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/03-ecommerce-checkout/case-14-shared-database-coupling.yaml"
+  },
+  "case-15-unmapped-requirement": {
+    "id": "case-15-unmapped-requirement",
+    "archetype": "03-ecommerce-checkout",
+    "category": "flawed",
+    "title": "Unmapped Requirement Order",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/03-ecommerce-checkout/case-15-unmapped-requirement.yaml"
+  },
+  "case-16-optimal-resilient": {
+    "id": "case-16-optimal-resilient",
+    "archetype": "04-realtime-chat",
+    "category": "optimal",
+    "title": "Optimal Message Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/04-realtime-chat/case-16-optimal-resilient.yaml"
+  },
+  "case-17-spof-single-replica": {
+    "id": "case-17-spof-single-replica",
+    "archetype": "04-realtime-chat",
+    "category": "flawed",
+    "title": "SPOF Message Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/04-realtime-chat/case-17-spof-single-replica.yaml"
+  },
+  "case-18-non-idempotent-worker": {
+    "id": "case-18-non-idempotent-worker",
+    "archetype": "04-realtime-chat",
+    "category": "flawed",
+    "title": "Non-Idempotent Message Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/04-realtime-chat/case-18-non-idempotent-worker.yaml"
+  },
+  "case-19-shared-database-coupling": {
+    "id": "case-19-shared-database-coupling",
+    "archetype": "04-realtime-chat",
+    "category": "flawed",
+    "title": "Shared DB Coupling Message",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/04-realtime-chat/case-19-shared-database-coupling.yaml"
+  },
+  "case-20-unmapped-requirement": {
+    "id": "case-20-unmapped-requirement",
+    "archetype": "04-realtime-chat",
+    "category": "flawed",
+    "title": "Unmapped Requirement Message",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/04-realtime-chat/case-20-unmapped-requirement.yaml"
+  },
+  "case-21-optimal-resilient": {
+    "id": "case-21-optimal-resilient",
+    "archetype": "05-rag-pipeline",
+    "category": "optimal",
+    "title": "Optimal Document Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/05-rag-pipeline/case-21-optimal-resilient.yaml"
+  },
+  "case-22-spof-single-replica": {
+    "id": "case-22-spof-single-replica",
+    "archetype": "05-rag-pipeline",
+    "category": "flawed",
+    "title": "SPOF Document Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/05-rag-pipeline/case-22-spof-single-replica.yaml"
+  },
+  "case-23-non-idempotent-worker": {
+    "id": "case-23-non-idempotent-worker",
+    "archetype": "05-rag-pipeline",
+    "category": "flawed",
+    "title": "Non-Idempotent Document Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/05-rag-pipeline/case-23-non-idempotent-worker.yaml"
+  },
+  "case-24-shared-database-coupling": {
+    "id": "case-24-shared-database-coupling",
+    "archetype": "05-rag-pipeline",
+    "category": "flawed",
+    "title": "Shared DB Coupling Document",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/05-rag-pipeline/case-24-shared-database-coupling.yaml"
+  },
+  "case-25-unmapped-requirement": {
+    "id": "case-25-unmapped-requirement",
+    "archetype": "05-rag-pipeline",
+    "category": "flawed",
+    "title": "Unmapped Requirement Document",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/05-rag-pipeline/case-25-unmapped-requirement.yaml"
+  },
+  "case-26-optimal-resilient": {
+    "id": "case-26-optimal-resilient",
+    "archetype": "06-video-transcoding",
+    "category": "optimal",
+    "title": "Optimal VideoJob Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/06-video-transcoding/case-26-optimal-resilient.yaml"
+  },
+  "case-27-spof-single-replica": {
+    "id": "case-27-spof-single-replica",
+    "archetype": "06-video-transcoding",
+    "category": "flawed",
+    "title": "SPOF VideoJob Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/06-video-transcoding/case-27-spof-single-replica.yaml"
+  },
+  "case-28-non-idempotent-worker": {
+    "id": "case-28-non-idempotent-worker",
+    "archetype": "06-video-transcoding",
+    "category": "flawed",
+    "title": "Non-Idempotent VideoJob Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/06-video-transcoding/case-28-non-idempotent-worker.yaml"
+  },
+  "case-29-shared-database-coupling": {
+    "id": "case-29-shared-database-coupling",
+    "archetype": "06-video-transcoding",
+    "category": "flawed",
+    "title": "Shared DB Coupling VideoJob",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/06-video-transcoding/case-29-shared-database-coupling.yaml"
+  },
+  "case-30-unmapped-requirement": {
+    "id": "case-30-unmapped-requirement",
+    "archetype": "06-video-transcoding",
+    "category": "flawed",
+    "title": "Unmapped Requirement VideoJob",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/06-video-transcoding/case-30-unmapped-requirement.yaml"
+  },
+  "case-31-optimal-resilient": {
+    "id": "case-31-optimal-resilient",
+    "archetype": "07-payment-ledger",
+    "category": "optimal",
+    "title": "Optimal Transaction Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/07-payment-ledger/case-31-optimal-resilient.yaml"
+  },
+  "case-32-spof-single-replica": {
+    "id": "case-32-spof-single-replica",
+    "archetype": "07-payment-ledger",
+    "category": "flawed",
+    "title": "SPOF Transaction Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/07-payment-ledger/case-32-spof-single-replica.yaml"
+  },
+  "case-33-non-idempotent-worker": {
+    "id": "case-33-non-idempotent-worker",
+    "archetype": "07-payment-ledger",
+    "category": "flawed",
+    "title": "Non-Idempotent Transaction Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/07-payment-ledger/case-33-non-idempotent-worker.yaml"
+  },
+  "case-34-shared-database-coupling": {
+    "id": "case-34-shared-database-coupling",
+    "archetype": "07-payment-ledger",
+    "category": "flawed",
+    "title": "Shared DB Coupling Transaction",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/07-payment-ledger/case-34-shared-database-coupling.yaml"
+  },
+  "case-35-unmapped-requirement": {
+    "id": "case-35-unmapped-requirement",
+    "archetype": "07-payment-ledger",
+    "category": "flawed",
+    "title": "Unmapped Requirement Transaction",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/07-payment-ledger/case-35-unmapped-requirement.yaml"
+  },
+  "case-36-optimal-resilient": {
+    "id": "case-36-optimal-resilient",
+    "archetype": "08-iot-telemetry",
+    "category": "optimal",
+    "title": "Optimal SensorReading Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/08-iot-telemetry/case-36-optimal-resilient.yaml"
+  },
+  "case-37-spof-single-replica": {
+    "id": "case-37-spof-single-replica",
+    "archetype": "08-iot-telemetry",
+    "category": "flawed",
+    "title": "SPOF SensorReading Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/08-iot-telemetry/case-37-spof-single-replica.yaml"
+  },
+  "case-38-non-idempotent-worker": {
+    "id": "case-38-non-idempotent-worker",
+    "archetype": "08-iot-telemetry",
+    "category": "flawed",
+    "title": "Non-Idempotent SensorReading Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/08-iot-telemetry/case-38-non-idempotent-worker.yaml"
+  },
+  "case-39-shared-database-coupling": {
+    "id": "case-39-shared-database-coupling",
+    "archetype": "08-iot-telemetry",
+    "category": "flawed",
+    "title": "Shared DB Coupling SensorReading",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/08-iot-telemetry/case-39-shared-database-coupling.yaml"
+  },
+  "case-40-unmapped-requirement": {
+    "id": "case-40-unmapped-requirement",
+    "archetype": "08-iot-telemetry",
+    "category": "flawed",
+    "title": "Unmapped Requirement SensorReading",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/08-iot-telemetry/case-40-unmapped-requirement.yaml"
+  },
+  "case-41-optimal-resilient": {
+    "id": "case-41-optimal-resilient",
+    "archetype": "09-multitenant-saas",
+    "category": "optimal",
+    "title": "Optimal TenantWorkspace Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/09-multitenant-saas/case-41-optimal-resilient.yaml"
+  },
+  "case-42-spof-single-replica": {
+    "id": "case-42-spof-single-replica",
+    "archetype": "09-multitenant-saas",
+    "category": "flawed",
+    "title": "SPOF TenantWorkspace Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/09-multitenant-saas/case-42-spof-single-replica.yaml"
+  },
+  "case-43-non-idempotent-worker": {
+    "id": "case-43-non-idempotent-worker",
+    "archetype": "09-multitenant-saas",
+    "category": "flawed",
+    "title": "Non-Idempotent TenantWorkspace Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/09-multitenant-saas/case-43-non-idempotent-worker.yaml"
+  },
+  "case-44-shared-database-coupling": {
+    "id": "case-44-shared-database-coupling",
+    "archetype": "09-multitenant-saas",
+    "category": "flawed",
+    "title": "Shared DB Coupling TenantWorkspace",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/09-multitenant-saas/case-44-shared-database-coupling.yaml"
+  },
+  "case-45-unmapped-requirement": {
+    "id": "case-45-unmapped-requirement",
+    "archetype": "09-multitenant-saas",
+    "category": "flawed",
+    "title": "Unmapped Requirement TenantWorkspace",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/09-multitenant-saas/case-45-unmapped-requirement.yaml"
+  },
+  "case-46-optimal-resilient": {
+    "id": "case-46-optimal-resilient",
+    "archetype": "10-feature-flagging",
+    "category": "optimal",
+    "title": "Optimal FeatureEval Architecture",
+    "description": "0 findings expected.",
+    "expectedFindingRuleIds": [],
+    "expectedFindingSeverities": {},
+    "relativeFilePath": "benchmarks/cases/10-feature-flagging/case-46-optimal-resilient.yaml"
+  },
+  "case-47-spof-single-replica": {
+    "id": "case-47-spof-single-replica",
+    "archetype": "10-feature-flagging",
+    "category": "flawed",
+    "title": "SPOF FeatureEval Ingress",
+    "description": "Triggers REL-004.",
+    "expectedFindingRuleIds": [
+      "REL-004"
+    ],
+    "expectedFindingSeverities": {
+      "warning": 1
+    },
+    "relativeFilePath": "benchmarks/cases/10-feature-flagging/case-47-spof-single-replica.yaml"
+  },
+  "case-48-non-idempotent-worker": {
+    "id": "case-48-non-idempotent-worker",
+    "archetype": "10-feature-flagging",
+    "category": "flawed",
+    "title": "Non-Idempotent FeatureEval Consumer",
+    "description": "Triggers REL-002.",
+    "expectedFindingRuleIds": [
+      "REL-002"
+    ],
+    "expectedFindingSeverities": {
+      "critical": 1
+    },
+    "relativeFilePath": "benchmarks/cases/10-feature-flagging/case-48-non-idempotent-worker.yaml"
+  },
+  "case-49-shared-database-coupling": {
+    "id": "case-49-shared-database-coupling",
+    "archetype": "10-feature-flagging",
+    "category": "flawed",
+    "title": "Shared DB Coupling FeatureEval",
+    "description": "Triggers STRUC-002.",
+    "expectedFindingRuleIds": [
+      "STRUC-002"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/10-feature-flagging/case-49-shared-database-coupling.yaml"
+  },
+  "case-50-unmapped-requirement": {
+    "id": "case-50-unmapped-requirement",
+    "archetype": "10-feature-flagging",
+    "category": "flawed",
+    "title": "Unmapped Requirement FeatureEval",
+    "description": "Triggers REQ-COV-001.",
+    "expectedFindingRuleIds": [
+      "REQ-COV-001"
+    ],
+    "expectedFindingSeverities": {
+      "error": 1
+    },
+    "relativeFilePath": "benchmarks/cases/10-feature-flagging/case-50-unmapped-requirement.yaml"
+  }
+}

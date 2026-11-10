@@ -1,0 +1,67 @@
+archbench:
+  spec_version: "0.1"
+  project: url-shortener-unbounded-retries
+  description: URL Shortener with Misconfigured Excessive Retries
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Shorten and redirect URLs.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: faulty-retries
+      name: Aggressive Retry Configuration
+      description: Service configured with 50 retries causing retry storm vulnerability.
+      components:
+        - id: api-svc
+          name: API Service
+          type: service
+          technology: Go
+          responsibility: API handler.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            retry_policy:
+              max_attempts: 50
+              backoff: linear
+        - id: url-db
+          name: PostgreSQL Database
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: URL table.
+          data:
+            ownership: url-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c04-user-svc
+          from: end-user
+          to: api-svc
+          protocol: synchronous
+          transport: https
+        - id: c04-svc-db
+          from: api-svc
+          to: url-db
+          protocol: synchronous
+          transport: tcp

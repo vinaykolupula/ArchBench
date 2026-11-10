@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://archbench.org/schemas/report/v1.schema.json",
+  "title": "ArchBench Architecture Evaluation Report",
+  "description": "Schema for machine-readable ArchBench architecture evaluation reports",
+  "type": "object",
+  "required": ["metadata", "passed", "alternatives"],
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["project", "specVersion", "evaluatedAt", "profile"],
+      "additionalProperties": false,
+      "properties": {
+        "project": { "type": "string" },
+        "specVersion": { "type": "string" },
+        "evaluatedAt": { "type": "string", "format": "date-time" },
+        "profile": { "type": "string" }
+      }
+    },
+    "passed": { "type": "boolean" },
+    "alternatives": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "alternativeId",
+          "alternativeName",
+          "passed",
+          "score",
+          "summary",
+          "findings",
+          "justEnough"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "alternativeId": { "type": "string" },
+          "alternativeName": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "summary": {
+            "type": "object",
+            "required": [
+              "score",
+              "totalFindings",
+              "criticalCount",
+              "errorCount",
+              "warningCount",
+              "infoCount",
+              "unknownCount",
+              "requirementCoverage"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "score": { "type": "number", "minimum": 0, "maximum": 100 },
+              "totalFindings": { "type": "integer", "minimum": 0 },
+              "criticalCount": { "type": "integer", "minimum": 0 },
+              "errorCount": { "type": "integer", "minimum": 0 },
+              "warningCount": { "type": "integer", "minimum": 0 },
+              "infoCount": { "type": "integer", "minimum": 0 },
+              "unknownCount": { "type": "integer", "minimum": 0 },
+              "requirementCoverage": {
+                "type": "object",
+                "required": ["total", "mapped", "unmappedMust", "unmappedShould", "percentage"],
+                "additionalProperties": false,
+                "properties": {
+                  "total": { "type": "integer", "minimum": 0 },
+                  "mapped": { "type": "integer", "minimum": 0 },
+                  "unmappedMust": { "type": "integer", "minimum": 0 },
+                  "unmappedShould": { "type": "integer", "minimum": 0 },
+                  "percentage": { "type": "number", "minimum": 0, "maximum": 100 }
+                }
+              }
+            }
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "testId", "status", "severity", "title", "summary"],
+              "additionalProperties": true,
+              "properties": {
+                "id": { "type": "string" },
+                "testId": { "type": "string" },
+                "status": {
+                  "type": "string",
+                  "enum": ["pass", "fail", "warning", "not_applicable", "unknown", "error"]
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["critical", "error", "warning", "info"]
+                },
+                "title": { "type": "string" },
+                "summary": { "type": "string" },
+                "evidence": { "type": "array" },
+                "affectedComponents": { "type": "array", "items": { "type": "string" } },
+                "suggestedActions": { "type": "array", "items": { "type": "string" } },
+                "learningConcept": { "type": "string" }
+              }
+            }
+          },
+          "justEnough": {
+            "type": "object",
+            "required": ["complexityVector", "componentJustifications", "evolutionTriggers", "summary"],
+            "additionalProperties": false,
+            "properties": {
+              "complexityVector": {
+                "type": "object",
+                "required": [
+                  "componentCount",
+                  "deployableCount",
+                  "networkBoundaryCount",
+                  "statefulStoreCount",
+                  "externalDependencyCount"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "componentCount": { "type": "integer" },
+                  "deployableCount": { "type": "integer" },
+                  "networkBoundaryCount": { "type": "integer" },
+                  "statefulStoreCount": { "type": "integer" },
+                  "externalDependencyCount": { "type": "integer" }
+                }
+              },
+              "componentJustifications": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["componentId", "componentType", "status", "reason"],
+                  "additionalProperties": true
+                }
+              },
+              "evolutionTriggers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "metric", "threshold", "action"],
+                  "additionalProperties": true
+                }
+              },
+              "summary": {
+                "type": "object",
+                "required": [
+                  "justifiedCount",
+                  "conditionalCount",
+                  "prematureCount",
+                  "duplicativeCount",
+                  "unclearCount"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "justifiedCount": { "type": "integer" },
+                  "conditionalCount": { "type": "integer" },
+                  "prematureCount": { "type": "integer" },
+                  "duplicativeCount": { "type": "integer" },
+                  "unclearCount": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

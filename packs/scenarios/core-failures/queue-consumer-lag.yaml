@@ -1,0 +1,48 @@
+id: core.queue.consumer_lag
+version: 1
+name: Worker Processing Throughput Degraded Under Peak Ingress
+category: queue
+level: analytical
+
+preconditions:
+  required_components:
+    - message_queue
+    - background_worker
+
+inputs:
+  arrival_rate_per_sec:
+    type: number
+    default: 5000
+  normal_worker_rate_per_sec:
+    type: number
+    default: 6000
+  degraded_worker_rate_per_sec:
+    type: number
+    default: 1500
+  degradation_duration_seconds:
+    type: integer
+    default: 600
+
+simulation:
+  backlog_accumulated: "(inputs.arrival_rate_per_sec - inputs.degraded_worker_rate_per_sec) * inputs.degradation_duration_seconds"
+  recovery_duration_seconds: "simulation.backlog_accumulated / (inputs.normal_worker_rate_per_sec - inputs.arrival_rate_per_sec)"
+
+assertions:
+  - id: check-backlog-growth
+    description: Accumulated backlog must not exceed 2,500,000 messages during degraded window
+    condition: simulation.backlog_accumulated <= 2500000
+    severity: critical
+
+  - id: check-recovery-time
+    description: System recovery time after worker throughput restoration must not exceed 3,600 seconds
+    condition: simulation.recovery_duration_seconds <= 3600
+    severity: warning
+
+learning:
+  concept: Backpressure & Recovery Time Objective (RTO)
+  explanation: >
+    When background workers experience degraded throughput or external provider rate limits,
+    producers continuously buffer messages. The time to drain the accumulated backlog once normal
+    processing resumes depends directly on the headroom between normal processing capacity and
+    the incoming arrival rate.
+

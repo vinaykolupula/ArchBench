@@ -1,0 +1,82 @@
+archbench:
+  spec_version: "0.1"
+  project: ecommerce-checkout-shared-db
+  description: Shared Database Coupling for Order
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Manage Order state.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: shared-db-alt
+      name: Shared Database Anti-Pattern
+      description: Two services directly mutating the same database.
+      components:
+        - id: checkout-read-svc
+          name: Order Query Service
+          type: service
+          technology: Go
+          responsibility: Query service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: checkout-write-svc
+          name: Order Mutation Service
+          type: service
+          technology: Java
+          responsibility: Write service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: checkout-master-db
+          name: Order Shared Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Shared datastore.
+          data:
+            ownership: checkout-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c14-user-read
+          from: end-user
+          to: checkout-read-svc
+          protocol: synchronous
+          transport: https
+        - id: c14-user-write
+          from: end-user
+          to: checkout-write-svc
+          protocol: synchronous
+          transport: https
+        - id: c14-read-db
+          from: checkout-read-svc
+          to: checkout-master-db
+          protocol: synchronous
+          transport: tcp
+        - id: c14-write-db
+          from: checkout-write-svc
+          to: checkout-master-db
+          protocol: synchronous
+          transport: tcp

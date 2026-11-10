@@ -1,0 +1,44 @@
+id: core.dependency.timeout_outage
+version: 1
+name: Downstream External Provider Outage for 15 Minutes
+category: dependency
+level: analytical
+
+preconditions:
+  required_components:
+    - message_queue
+    - background_worker
+
+inputs:
+  arrival_rate_per_sec:
+    type: number
+    default: 5000
+  outage_duration_seconds:
+    type: integer
+    default: 900
+  worker_processing_rate_after_outage:
+    type: number
+    default: 8000
+
+simulation:
+  total_outage_backlog: "inputs.arrival_rate_per_sec * inputs.outage_duration_seconds"
+  drain_duration_seconds: "simulation.total_outage_backlog / (inputs.worker_processing_rate_after_outage - inputs.arrival_rate_per_sec)"
+
+assertions:
+  - id: check-queue-storage-absorption
+    description: Queue must absorb complete 15-minute outage volume without buffer drop
+    condition: simulation.total_outage_backlog <= 5000000
+    severity: critical
+
+  - id: check-post-outage-drain-time
+    description: Backlog must be completely drained within 2 hours after provider recovery
+    condition: simulation.drain_duration_seconds <= 7200
+    severity: warning
+
+learning:
+  concept: Decoupling & Availability Isolation
+  explanation: >
+    Asynchronous message queues isolate upstream API acceptance from downstream dependency
+    outages. During provider downtime, requests succeed immediately upon queue ingestion while
+    messages accumulate safely for deferred processing.
+

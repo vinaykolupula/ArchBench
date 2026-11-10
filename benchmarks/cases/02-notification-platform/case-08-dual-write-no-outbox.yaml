@@ -1,0 +1,91 @@
+archbench:
+  spec_version: "0.1"
+  project: notification-dual-write
+  description: Notification API directly mutating DB and Kafka without Outbox pattern
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Enqueue and log notifications.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: dual-write-variant
+      name: Direct Dual Write Handler
+      description: API handler publishes to queue and writes to database without
+        transactional outbox.
+      components:
+        - id: notify-api
+          name: Notification API
+          type: service
+          technology: Node.js
+          responsibility: Accepts notification requests.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: notify-db
+          name: Audit Database
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Notification audit records.
+          data:
+            ownership: notification-domain
+          deployment:
+            replicas: 2
+        - id: notify-queue
+          name: Kafka Topic
+          type: message_queue
+          technology: Kafka
+          responsibility: Event streaming.
+          messaging:
+            overload_policy: bounded_retention
+        - id: notify-worker
+          name: Notification Worker
+          type: background_worker
+          technology: Go
+          responsibility: Processes queue.
+          deployment:
+            replicas: 2
+          behavior:
+            idempotent: true
+            idempotency_key: id
+      connections:
+        - id: c08-user-api
+          from: end-user
+          to: notify-api
+          protocol: synchronous
+          transport: https
+        - id: c08-api-db
+          from: notify-api
+          to: notify-db
+          protocol: synchronous
+          transport: tcp
+        - id: c08-api-queue
+          from: notify-api
+          to: notify-queue
+          protocol: asynchronous
+          transport: kafka
+        - id: c08-queue-worker
+          from: notify-queue
+          to: notify-worker
+          protocol: asynchronous
+          transport: kafka

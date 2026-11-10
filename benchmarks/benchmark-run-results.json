@@ -1,0 +1,912 @@
+{
+  "evaluatedAt": "2026-11-10T20:09:34.920Z",
+  "totalCases": 50,
+  "schemaValidationRate": 1,
+  "metrics": {
+    "truePositives": 43,
+    "falsePositives": 0,
+    "falseNegatives": 0,
+    "precision": 1,
+    "recall": 1,
+    "f1Score": 1
+  },
+  "totalDurationMs": 66,
+  "cases": [
+    {
+      "id": "case-01-optimal-simple",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 8
+    },
+    {
+      "id": "case-02-justified-cache",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-03-speculative-microservices",
+      "category": "speculative",
+      "schemaValid": true,
+      "score": 37,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001",
+        "STRUC-001",
+        "REL-002",
+        "DATA-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001",
+        "STRUC-001",
+        "REL-002",
+        "DATA-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001",
+        "STRUC-001",
+        "REL-002",
+        "DATA-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 6
+    },
+    {
+      "id": "case-04-unbounded-retries",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 90,
+      "passed": true,
+      "expectedRules": [
+        "REL-001",
+        "REL-003"
+      ],
+      "actualRules": [
+        "REL-001",
+        "REL-003"
+      ],
+      "truePositives": [
+        "REL-001",
+        "REL-003"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-05-sync-chain-cascade",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 90,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-001"
+      ],
+      "actualRules": [
+        "STRUC-001"
+      ],
+      "truePositives": [
+        "STRUC-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-06-production-grade",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-07-sync-chain-cascade",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 90,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-001"
+      ],
+      "actualRules": [
+        "STRUC-001"
+      ],
+      "truePositives": [
+        "STRUC-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-08-dual-write-no-outbox",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "DATA-001"
+      ],
+      "actualRules": [
+        "DATA-001"
+      ],
+      "truePositives": [
+        "DATA-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-09-missing-dlq-quarantine",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-003"
+      ],
+      "actualRules": [
+        "REL-003"
+      ],
+      "truePositives": [
+        "REL-003"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-10-unconsumed-queue-overload",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 80,
+      "passed": false,
+      "expectedRules": [
+        "SCAL-001"
+      ],
+      "actualRules": [
+        "SCAL-001"
+      ],
+      "truePositives": [
+        "SCAL-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-11-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-12-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-13-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-14-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-15-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-16-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-17-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-18-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-19-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-20-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-21-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-22-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-23-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-24-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-25-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-26-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-27-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-28-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-29-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-30-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-31-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-32-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-33-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-34-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-35-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-36-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-37-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-38-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-39-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-40-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-41-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-42-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-43-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-44-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-45-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-46-optimal-resilient",
+      "category": "optimal",
+      "schemaValid": true,
+      "score": 100,
+      "passed": true,
+      "expectedRules": [],
+      "actualRules": [],
+      "truePositives": [],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-47-spof-single-replica",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "REL-004"
+      ],
+      "actualRules": [
+        "REL-004"
+      ],
+      "truePositives": [
+        "REL-004"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 2
+    },
+    {
+      "id": "case-48-non-idempotent-worker",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 75,
+      "passed": false,
+      "expectedRules": [
+        "REL-002"
+      ],
+      "actualRules": [
+        "REL-002"
+      ],
+      "truePositives": [
+        "REL-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    },
+    {
+      "id": "case-49-shared-database-coupling",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 95,
+      "passed": true,
+      "expectedRules": [
+        "STRUC-002"
+      ],
+      "actualRules": [
+        "STRUC-002"
+      ],
+      "truePositives": [
+        "STRUC-002"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 0
+    },
+    {
+      "id": "case-50-unmapped-requirement",
+      "category": "flawed",
+      "schemaValid": true,
+      "score": 72,
+      "passed": false,
+      "expectedRules": [
+        "REQ-COV-001"
+      ],
+      "actualRules": [
+        "REQ-COV-001"
+      ],
+      "truePositives": [
+        "REQ-COV-001"
+      ],
+      "falsePositives": [],
+      "falseNegatives": [],
+      "durationMs": 1
+    }
+  ]
+}

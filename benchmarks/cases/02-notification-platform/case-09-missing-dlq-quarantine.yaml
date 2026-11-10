@@ -1,0 +1,68 @@
+archbench:
+  spec_version: "0.1"
+  project: notification-missing-dlq
+  description: Worker retries messages but lacks a DLQ quarantine target
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process notifications.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: no-dlq-variant
+      name: Retry Worker Without Dead Letter Target
+      description: Worker retries failed notifications without quarantine.
+      components:
+        - id: notify-queue
+          name: SQS Queue
+          type: message_queue
+          technology: AWS SQS
+          responsibility: Notification queue.
+          messaging:
+            overload_policy: cloudwatch_alarm
+            delivery_semantics: at_least_once
+        - id: notify-worker
+          name: Notification Worker
+          type: background_worker
+          technology: Go
+          responsibility: Dispatches notifications with retries.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: true
+            idempotency_key: msg_id
+            retry_policy:
+              max_attempts: 5
+              backoff: exponential
+      connections:
+        - id: c09-user-queue
+          from: end-user
+          to: notify-queue
+          protocol: asynchronous
+          transport: sqs
+        - id: c09-queue-worker
+          from: notify-queue
+          to: notify-worker
+          protocol: asynchronous
+          transport: sqs

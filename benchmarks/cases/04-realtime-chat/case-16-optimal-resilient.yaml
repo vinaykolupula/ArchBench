@@ -1,0 +1,119 @@
+archbench:
+  spec_version: "0.1"
+  project: realtime-chat-optimal
+  description: Optimal Resilient Architecture for Message Processing
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process Message operations.
+      verification: architecture_check
+    - id: NFR-01
+      category: latency
+      priority: must
+      statement: p99 response < 50ms
+      verification: architecture_check
+      target:
+        p99_ms: 50
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: optimal-pipeline
+      name: Optimal Message Pipeline
+      description: Production-grade architecture with HA, outbox, idempotent worker,
+        and DLQ.
+      decisions:
+        - id: ADR-001
+          title: Transactional Outbox
+          choice: Outbox Pattern
+          context: Prevent dual write.
+          status: accepted
+      components:
+        - id: chat-api
+          name: Message API
+          type: service
+          technology: Go
+          responsibility: Ingress handler for Message.
+          requirements:
+            - REQ-01
+            - NFR-01
+          deployment:
+            replicas: 3
+        - id: chat-db
+          name: Message Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Stores Message records.
+          data:
+            ownership: chat-domain
+          deployment:
+            replicas: 2
+        - id: chat-queue
+          name: Message Queue
+          type: message_queue
+          technology: RabbitMQ
+          responsibility: Buffers async Message jobs.
+          messaging:
+            overload_policy: alert_and_drop_oldest
+            delivery_semantics: at_least_once
+        - id: chat-dlq
+          name: Message DLQ
+          type: message_queue
+          technology: RabbitMQ DLQ
+          responsibility: Quarantine queue.
+          messaging:
+            overload_policy: alert_on_call
+        - id: chat-worker
+          name: Message Worker
+          type: background_worker
+          technology: Rust
+          responsibility: Processes Message jobs.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: true
+            idempotency_key: chat_id
+            retry_policy:
+              max_attempts: 3
+              backoff: exponential
+              dead_letter_target: chat-dlq
+      connections:
+        - id: c16-user-api
+          from: end-user
+          to: chat-api
+          protocol: synchronous
+          transport: https
+        - id: c16-api-db
+          from: chat-api
+          to: chat-db
+          protocol: synchronous
+          transport: tcp
+        - id: c16-api-queue
+          from: chat-api
+          to: chat-queue
+          protocol: asynchronous
+          transport: amqp
+        - id: c16-queue-worker
+          from: chat-queue
+          to: chat-worker
+          protocol: asynchronous
+          transport: amqp

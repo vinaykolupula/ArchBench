@@ -1,0 +1,79 @@
+archbench:
+  spec_version: "0.1"
+  project: url-shortener-optimal-simple
+  description: Modular URL Shortener with Single Service and Postgres
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Shorten long URLs.
+      verification: architecture_check
+    - id: REQ-02
+      category: functional
+      priority: must
+      statement: Redirect short code to destination.
+      verification: architecture_check
+    - id: NFR-01
+      category: latency
+      priority: must
+      statement: p99 latency < 20ms
+      verification: architecture_check
+      target:
+        p99_latency_ms: 20
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: modular-monolith
+      name: Modular Service with Relational Database
+      description: Simple stateless application with redundant replicas and pooled Postgres.
+      components:
+        - id: shortener-app
+          name: Shortener Application
+          type: application
+          technology: Go / Chi
+          responsibility: Handles URL encoding and HTTP 302 redirections.
+          requirements:
+            - REQ-01
+            - REQ-02
+            - NFR-01
+          deployment:
+            replicas: 3
+        - id: shortener-db
+          name: PostgreSQL Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Stores URL mappings and indexes.
+          data:
+            ownership: shortener-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c01-user-app
+          from: end-user
+          to: shortener-app
+          protocol: synchronous
+          transport: https
+          purpose: Shorten and redirect
+        - id: c01-app-db
+          from: shortener-app
+          to: shortener-db
+          protocol: synchronous
+          transport: tcp
+          purpose: Read and write URL records

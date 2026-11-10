@@ -1,0 +1,209 @@
+archbench:
+  spec_version: "0.1"
+  project: realtime-chat
+  description: "Horizontally scalable real-time chat platform with WebSocket connection management and pub-sub fanout."
+  authors:
+    - "ArchBench Team"
+
+system:
+  context:
+    users:
+      - id: chat-participant
+        name: "Chat User"
+        description: "Mobile and web users exchanging real-time messages in group channels."
+    external_systems:
+      - id: push-notification-service
+        name: "Apple / Google Push Gateway"
+        category: external_provider
+        description: "External APNs / FCM delivery for offline chat participants."
+
+  requirements:
+    - id: REQ-CHAT-001
+      category: functional
+      priority: must
+      statement: "Establish bidirectional persistent WebSocket connections and dispatch messages in real-time."
+      verification: architecture_check
+
+    - id: REQ-HIST-001
+      category: functional
+      priority: must
+      statement: "Persist immutable channel message history and support paginated retrospective queries."
+      verification: architecture_check
+
+    - id: REQ-PRESENCE-001
+      category: functional
+      priority: should
+      statement: "Broadcast online/offline user presence states to channel members."
+      verification: architecture_check
+
+    - id: NFR-LATENCY-001
+      category: latency
+      priority: must
+      statement: "Message fan-out delivery latency must remain below 100ms at p99 within the same region."
+      target:
+        p99_delivery_latency_ms: 100
+      verification: capacity_analysis
+
+    - id: NFR-CONCURRENCY-001
+      category: scalability
+      priority: must
+      statement: "Support 250,000 concurrent active WebSocket connections across gateway nodes."
+      target:
+        concurrent_connections: 250000
+      verification: capacity_analysis
+
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: "WebSocket gateway nodes must remain fully stateless to support zero-downtime rolling deploys."
+
+  assumptions:
+    - id: ASM-001
+      statement: "95% of active users are lurkers/readers; write message rate is 5% of active connection count."
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+
+architecture:
+  alternatives:
+    - id: distributed-pubsub-architecture
+      name: "Stateless WebSocket Gateways with Distributed Redis Pub/Sub and Partitioned NoSQL Store"
+      description: "Combines an edge WebSocket connection tier, distributed in-memory pub-sub backplane, and asynchronous durable message persistence."
+      decisions:
+        - id: ADR-001
+          title: "Decouple Ingress WebSocket State from Message Fan-Out Backplane"
+          status: accepted
+          context: "WebSocket connections are node-pinned, but participants in the same channel connect to arbitrary gateway instances."
+          choice: "Use Redis Cluster Pub/Sub as an ephemeral message distribution bus across gateway servers."
+          consequences:
+            - "Allows gateway nodes to be stateless."
+            - "Enables horizontal scaling of edge connection tiers."
+          requirements:
+            - REQ-CHAT-001
+            - NFR-CONCURRENCY-001
+
+        - id: ADR-002
+          title: "Asynchronous Message History Persistence"
+          status: accepted
+          context: "Database write latency must not block real-time delivery to connected channel subscribers."
+          choice: "Fan-out messages immediately over Redis, and publish to an async queue for persistence."
+          consequences:
+            - "Guarantees sub-100ms delivery latency."
+            - "Requires at-least-once durable persistence worker."
+          requirements:
+            - REQ-HIST-001
+            - NFR-LATENCY-001
+
+      components:
+        - id: ws-gateway
+          name: "Edge WebSocket Gateway Cluster"
+          type: api_gateway
+          technology: "Go / Gorilla WebSocket"
+          responsibility: "Maintains active TLS WebSocket connections, authenticates session tokens, and subscribes to Redis channels."
+          requirements:
+            - REQ-CHAT-001
+            - NFR-CONCURRENCY-001
+          deployment:
+            replicas: 10
+
+        - id: redis-pubsub
+          name: "Redis Pub/Sub & Presence Cluster"
+          type: key_value_store
+          technology: "Redis 7 Cluster"
+          responsibility: "Dispatches ephemeral message payloads across gateway nodes and tracks ephemeral presence heartbeats."
+          requirements:
+            - REQ-CHAT-001
+            - REQ-PRESENCE-001
+            - NFR-LATENCY-001
+          data:
+            ownership: "chat-transport-domain"
+          deployment:
+            replicas: 6
+
+        - id: message-persistence-queue
+          name: "Message Persistence Stream"
+          type: message_queue
+          technology: "Apache Kafka"
+          responsibility: "Durable partitioned queue buffering chat messages for asynchronous datastore writing."
+          requirements:
+            - REQ-HIST-001
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "bounded_retention_and_alarm"
+            retention_period: "3d"
+
+        - id: chat-dlq
+          name: "Persistence Dead Letter Queue"
+          type: message_queue
+          technology: "Kafka DLQ Topic"
+          responsibility: "Quarantine storage for corrupted chat records."
+          requirements:
+            - REQ-HIST-001
+          messaging:
+            overload_policy: "alert_oncall"
+
+        - id: archive-worker
+          name: "Chat History Archival Worker Pool"
+          type: background_worker
+          technology: "Rust"
+          responsibility: "Consumes Kafka message stream, batches writes, and inserts into partitioned chat datastore."
+          requirements:
+            - REQ-HIST-001
+          deployment:
+            replicas: 4
+          behavior:
+            idempotent: true
+            idempotency_key: "message_id"
+            retry_policy:
+              max_attempts: 5
+              backoff: exponential
+              dead_letter_target: chat-dlq
+
+        - id: message-store
+          name: "Distributed Chat History Store"
+          type: document_database
+          technology: "ScyllaDB / Cassandra"
+          responsibility: "Partitioned immutable message archive indexed by (channel_id, bucket_day, message_timestamp)."
+          requirements:
+            - REQ-HIST-001
+          data:
+            ownership: "chat-history-domain"
+          deployment:
+            replicas: 3
+
+      connections:
+        - id: conn-user-ws
+          from: chat-participant
+          to: ws-gateway
+          protocol: synchronous
+          transport: wss
+          purpose: "Persistent full-duplex WebSocket session."
+
+        - id: conn-ws-redis
+          from: ws-gateway
+          to: redis-pubsub
+          protocol: synchronous
+          transport: tcp
+          purpose: "Publish outbound chat message and subscribe to channel updates."
+
+        - id: conn-ws-queue
+          from: ws-gateway
+          to: message-persistence-queue
+          protocol: asynchronous
+          transport: kafka
+          purpose: "Enqueue chat message for durable history persistence."
+
+        - id: conn-queue-worker
+          from: message-persistence-queue
+          to: archive-worker
+          protocol: asynchronous
+          transport: kafka
+          purpose: "Dispatch message batches to archival workers."
+
+        - id: conn-worker-db
+          from: archive-worker
+          to: message-store
+          protocol: synchronous
+          transport: cql
+          purpose: "Write immutable batch to ScyllaDB message table."
+

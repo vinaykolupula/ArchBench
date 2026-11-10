@@ -1,0 +1,36 @@
+{
+  "name": "@archbench/core",
+  "version": "0.1.0",
+  "description": "ArchBench Core Application Orchestrator and Facade",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@archbench/archspec": "workspace:*",
+    "@archbench/graph-engine": "workspace:*",
+    "@archbench/fitness-tests": "workspace:*",
+    "@archbench/archeval": "workspace:*",
+    "@archbench/comparison-engine": "workspace:*",
+    "@archbench/learning-mode": "workspace:*",
+    "@archbench/scenario-engine": "workspace:*",
+    "@archbench/report-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
+

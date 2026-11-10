@@ -1,0 +1,75 @@
+archbench:
+  spec_version: "0.1"
+  project: video-transcoding-spof
+  description: SPOF in VideoJob Ingress
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process VideoJob requests.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: spof-alternative
+      name: Single Replica Articulation Point
+      description: Gateway with 1 replica; SPOF.
+      components:
+        - id: video-gw
+          name: VideoJob Gateway
+          type: api_gateway
+          technology: Envoy
+          responsibility: Single gateway instance.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 1
+        - id: video-svc
+          name: VideoJob Service
+          type: service
+          technology: Go
+          responsibility: Backend logic.
+          deployment:
+            replicas: 3
+        - id: video-db
+          name: VideoJob Store
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Datastore.
+          data:
+            ownership: video-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c27-user-gw
+          from: end-user
+          to: video-gw
+          protocol: synchronous
+          transport: https
+        - id: c27-gw-svc
+          from: video-gw
+          to: video-svc
+          protocol: synchronous
+          transport: http
+        - id: c27-svc-db
+          from: video-svc
+          to: video-db
+          protocol: synchronous
+          transport: tcp

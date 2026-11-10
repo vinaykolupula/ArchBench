@@ -1,0 +1,75 @@
+archbench:
+  spec_version: "0.1"
+  project: feature-flagging-spof
+  description: SPOF in FeatureEval Ingress
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process FeatureEval requests.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: spof-alternative
+      name: Single Replica Articulation Point
+      description: Gateway with 1 replica; SPOF.
+      components:
+        - id: flag-gw
+          name: FeatureEval Gateway
+          type: api_gateway
+          technology: Envoy
+          responsibility: Single gateway instance.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 1
+        - id: flag-svc
+          name: FeatureEval Service
+          type: service
+          technology: Go
+          responsibility: Backend logic.
+          deployment:
+            replicas: 3
+        - id: flag-db
+          name: FeatureEval Store
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Datastore.
+          data:
+            ownership: flag-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c47-user-gw
+          from: end-user
+          to: flag-gw
+          protocol: synchronous
+          transport: https
+        - id: c47-gw-svc
+          from: flag-gw
+          to: flag-svc
+          protocol: synchronous
+          transport: http
+        - id: c47-svc-db
+          from: flag-svc
+          to: flag-db
+          protocol: synchronous
+          transport: tcp

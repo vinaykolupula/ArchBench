@@ -1,0 +1,31 @@
+{
+  "name": "@archbench/archeval",
+  "version": "0.1.0",
+  "description": "Evaluation orchestrator and JustEnough architecture analyzer for ArchBench",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@archbench/archspec": "workspace:*",
+    "@archbench/graph-engine": "workspace:*",
+    "@archbench/fitness-tests": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
+

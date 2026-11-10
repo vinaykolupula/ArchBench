@@ -1,0 +1,208 @@
+archbench:
+  spec_version: "0.1"
+  project: url-shortener
+  description: "High-throughput, low-latency URL shortening and redirection service."
+  authors:
+    - "ArchBench Team"
+
+system:
+  context:
+    users:
+      - id: web-client
+        name: "Web and Mobile Users"
+        description: "Users creating short links and accessing redirection endpoints."
+    external_systems:
+      - id: analytics-sink
+        name: "Clickhouse Analytics Cluster"
+        category: external_provider
+        description: "Downstream data warehouse for click and referrer telemetry."
+
+  requirements:
+    - id: REQ-001
+      category: functional
+      priority: must
+      statement: "Generate a unique 7-character short URL from a destination long URL."
+      verification: architecture_check
+
+    - id: REQ-002
+      category: functional
+      priority: must
+      statement: "Redirect HTTP requests from the short code to the target URL with HTTP 302."
+      verification: architecture_check
+
+    - id: REQ-003
+      category: functional
+      priority: should
+      statement: "Record click metrics (timestamp, IP, referrer) for every redirection."
+      verification: architecture_check
+
+    - id: NFR-LATENCY-001
+      category: latency
+      priority: must
+      statement: "Redirection latency must be under 15ms at p99."
+      target:
+        latency_p99_ms: 15
+      verification: capacity_analysis
+
+    - id: NFR-THROUGHPUT-001
+      category: throughput
+      priority: must
+      statement: "Handle 20,000 read requests/sec with a 50:1 read/write ratio."
+      target:
+        read_requests_per_second: 20000
+        write_requests_per_second: 400
+      verification: capacity_analysis
+
+  constraints:
+    - id: CON-001
+      category: budget
+      statement: "Minimize expensive persistent memory cache allocations."
+
+  assumptions:
+    - id: ASM-001
+      statement: "20% of short links account for 80% of all redirection traffic (Pareto distribution)."
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+
+architecture:
+  alternatives:
+    - id: cached-nosql-architecture
+      name: "Distributed In-Memory Cache with NoSQL Datastore and Async Telemetry"
+      description: "Combines an edge cache tier for hot URLs with a partitioned Key-Value store and background telemetry stream."
+      components:
+        - id: edge-router
+          name: "Edge API Gateway"
+          type: api_gateway
+          technology: "Cloudflare / Envoy"
+          responsibility: "Terminate TLS, enforce rate limiting, and route /create vs /{code} requests."
+          requirements:
+            - REQ-001
+            - REQ-002
+            - NFR-THROUGHPUT-001
+          deployment:
+            replicas: 3
+
+        - id: redirect-service
+          name: "Redirection Service"
+          type: service
+          technology: "Go / Gin"
+          responsibility: "Handle short-code lookups from cache or database and issue HTTP 302 redirects."
+          requirements:
+            - REQ-002
+            - NFR-THROUGHPUT-001
+          deployment:
+            replicas: 10
+            platform: "Kubernetes"
+
+        - id: hot-url-cache
+          name: "Hot URL In-Memory Cache"
+          type: cache
+          technology: "Redis Cluster"
+          responsibility: "Store active short-code to target-URL mappings with LRU eviction."
+          requirements:
+            - REQ-002
+            - NFR-LATENCY-001
+
+        - id: url-datastore
+          name: "Authoritative URL Mapping Store"
+          type: key_value_store
+          technology: "Amazon DynamoDB"
+          responsibility: "Durable primary key-value storage for all generated short code mappings."
+          requirements:
+            - REQ-001
+            - REQ-002
+          data:
+            ownership: "url-domain"
+            storage_type: "ssd"
+            retention: "permanent"
+
+        - id: telemetry-stream
+          name: "Clickstream Event Stream"
+          type: event_stream
+          technology: "Apache Kafka / Kinesis"
+          responsibility: "Buffer click metrics asynchronously without impacting the redirection critical path."
+          requirements:
+            - REQ-003
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "drop_sampled_metrics_on_saturation"
+
+      connections:
+        - id: conn-user-to-gateway
+          from: web-client
+          to: edge-router
+          protocol: synchronous
+          transport: "https"
+          purpose: "Incoming redirection and creation requests."
+          timeout_ms: 1000
+
+        - id: conn-gateway-to-redirect
+          from: edge-router
+          to: redirect-service
+          protocol: synchronous
+          transport: "http"
+          purpose: "Forward redirection requests."
+          timeout_ms: 500
+
+        - id: conn-redirect-to-cache
+          from: redirect-service
+          to: hot-url-cache
+          protocol: synchronous
+          transport: "redis-resp"
+          purpose: "Query hot cache for short URL target."
+          timeout_ms: 10
+
+        - id: conn-redirect-to-db
+          from: redirect-service
+          to: url-datastore
+          protocol: synchronous
+          transport: "https"
+          purpose: "Fallback query on cache miss and write new short links."
+          timeout_ms: 100
+
+        - id: conn-redirect-to-stream
+          from: redirect-service
+          to: telemetry-stream
+          protocol: asynchronous
+          transport: "tcp"
+          purpose: "Publish click telemetry event."
+
+        - id: conn-stream-to-analytics
+          from: telemetry-stream
+          to: analytics-sink
+          protocol: asynchronous
+          transport: "tcp"
+          purpose: "Ingest aggregated clickstream into analytics warehouse."
+
+      decisions:
+        - id: ADR-001
+          title: "Cache-Aside Architecture for High-Volume Reads"
+          status: accepted
+          context: "20k req/sec read load requires sub-15ms response times. Direct database queries on all reads would be cost-prohibitive and increase p99 latency."
+          choice: "Implement Cache-Aside with Redis in front of DynamoDB, populated upon cache miss."
+          alternatives:
+            - "Direct database read with read-replicas."
+            - "In-process memory cache per service replica."
+          consequences:
+            - "Sub-5ms response times for 80% of requests."
+            - "Requires cache invalidation upon URL updates or deletions."
+          requirements:
+            - REQ-002
+            - NFR-LATENCY-001
+          evolution_triggers:
+            - id: TRIG-CACHE-001
+              metric: "cache_hit_ratio"
+              threshold: "< 0.70"
+              condition: "Cache hit ratio falls below 70% under shifting long-tail URL access."
+              action: "Increase Redis memory allocation or introduce tier-2 local node caching."
+
+      workload:
+        peak_requests_per_second: 20000
+        read_write_ratio: "50:1"
+        average_payload_kb: 0.5
+
+      objectives:
+        latency_p99_ms: 15
+        availability_percent: 99.99
+

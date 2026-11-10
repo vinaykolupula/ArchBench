@@ -1,0 +1,44 @@
+id: data_consistency.dual_write.failure
+version: 1
+name: Dual-Write Failure Under Partial Network Partition
+category: database
+level: analytical
+
+preconditions:
+  required_components:
+    - relational_database
+    - message_queue
+
+inputs:
+  hourly_mutations:
+    type: number
+    default: 100000
+  uncoordinated_failure_rate_percent:
+    type: number
+    default: 0.05
+  reconciliation_window_hours:
+    type: integer
+    default: 24
+
+simulation:
+  daily_mutations: "inputs.hourly_mutations * inputs.reconciliation_window_hours"
+  potential_inconsistent_records: "simulation.daily_mutations * (inputs.uncoordinated_failure_rate_percent / 100)"
+
+assertions:
+  - id: check-inconsistency-surface
+    description: Potential inconsistent records without transactional outbox must be quantified
+    condition: simulation.potential_inconsistent_records >= 0
+    severity: info
+
+  - id: check-outbox-mitigation-urgency
+    description: Potential daily desync records exceeding 1,000 indicates critical need for Transactional Outbox
+    condition: simulation.potential_inconsistent_records <= 1500
+    severity: warning
+
+learning:
+  concept: Transactional Outbox & Dual-Write Elimination
+  explanation: >
+    Directly writing to a database and then publishing to a message broker in an application handler
+    without distributed two-phase commit creates a dual-write failure window. Crashes or network timeouts
+    between the two operations cause irreversible state drift between the database and downstream consumers.
+

@@ -1,0 +1,82 @@
+archbench:
+  spec_version: "0.1"
+  project: realtime-chat-shared-db
+  description: Shared Database Coupling for Message
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Manage Message state.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: shared-db-alt
+      name: Shared Database Anti-Pattern
+      description: Two services directly mutating the same database.
+      components:
+        - id: chat-read-svc
+          name: Message Query Service
+          type: service
+          technology: Go
+          responsibility: Query service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: chat-write-svc
+          name: Message Mutation Service
+          type: service
+          technology: Java
+          responsibility: Write service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: chat-master-db
+          name: Message Shared Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Shared datastore.
+          data:
+            ownership: chat-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c19-user-read
+          from: end-user
+          to: chat-read-svc
+          protocol: synchronous
+          transport: https
+        - id: c19-user-write
+          from: end-user
+          to: chat-write-svc
+          protocol: synchronous
+          transport: https
+        - id: c19-read-db
+          from: chat-read-svc
+          to: chat-master-db
+          protocol: synchronous
+          transport: tcp
+        - id: c19-write-db
+          from: chat-write-svc
+          to: chat-master-db
+          protocol: synchronous
+          transport: tcp

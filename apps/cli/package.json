@@ -1,0 +1,33 @@
+{
+  "name": "@archbench/cli",
+  "version": "0.1.0",
+  "description": "Command line interface for ArchBench architecture reasoning and validation",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "archbench": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@archbench/archspec": "workspace:*",
+    "@archbench/core": "workspace:*",
+    "@archbench/graph-engine": "workspace:*",
+    "@archbench/scenario-engine": "workspace:*",
+    "@archbench/web": "workspace:*",
+    "commander": "^13.1.0",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  }
+}
+

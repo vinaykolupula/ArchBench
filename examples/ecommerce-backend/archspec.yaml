@@ -1,0 +1,195 @@
+archbench:
+  spec_version: "0.1"
+  project: ecommerce-backend
+  description: "High-reliability e-commerce order checkout and inventory fulfillment backend."
+  authors:
+    - "ArchBench Team"
+
+system:
+  context:
+    users:
+      - id: shopper
+        name: "E-Commerce Shopper"
+        description: "Customers browsing products and submitting order checkouts."
+    external_systems:
+      - id: stripe-payment-gateway
+        name: "Stripe Payment Gateway"
+        category: external_provider
+        description: "PCI-compliant third-party credit card processing."
+      - id: warehouse-fulfillment-api
+        name: "Warehouse Logistics Provider"
+        category: external_provider
+        description: "Third-party logistics and shipping provider API."
+
+  requirements:
+    - id: REQ-ORDER-001
+      category: functional
+      priority: must
+      statement: "Accept customer checkout orders and persist authoritative order records."
+      verification: architecture_check
+
+    - id: REQ-PAY-001
+      category: functional
+      priority: must
+      statement: "Charge customer payment method through external payment gateway with idempotency."
+      verification: architecture_check
+
+    - id: REQ-INV-001
+      category: functional
+      priority: must
+      statement: "Reserve product inventory atomically upon successful checkout."
+      verification: architecture_check
+
+    - id: NFR-AVAIL-001
+      category: availability
+      priority: must
+      statement: "Checkout API tier must achieve 99.95% uptime."
+      target:
+        availability_percent: 99.95
+      verification: scenario_and_slo_review
+
+    - id: NFR-THROUGHPUT-001
+      category: throughput
+      priority: must
+      statement: "Sustain 1,500 checkout requests per second during flash sales."
+      target:
+        checkout_requests_per_second: 1500
+      verification: capacity_analysis
+
+  constraints:
+    - id: CON-001
+      category: regulatory
+      statement: "Credit card details must never touch internal application servers (tokenized checkout)."
+
+  assumptions:
+    - id: ASM-001
+      statement: "Payment authorizations expire after 7 days if not captured."
+      status: confirmed
+      confidence: high
+      impact_if_false: high
+
+architecture:
+  alternatives:
+    - id: resilient-saga-architecture
+      name: "Transactional Outbox with Asynchronous Payment & Fulfillment Sagas"
+      description: "Decouples order ingestion from external payment execution using local ACID transactions, Outbox event relay, and idempotent workers."
+      decisions:
+        - id: ADR-001
+          title: "Transactional Outbox Pattern for Order Checkout"
+          status: accepted
+          context: "Prevent dual write state desynchronization between order database and messaging broker."
+          choice: "Write order record and outbox message in the same local ACID transaction."
+          consequences:
+            - "Eliminates distributed 2PC locking."
+            - "Guarantees at-least-once event delivery to payment workers."
+          requirements:
+            - REQ-ORDER-001
+            - REQ-PAY-001
+
+      components:
+        - id: checkout-api
+          name: "Checkout Ingress API"
+          type: service
+          technology: "Go / Chi"
+          responsibility: "Validates customer orders, checks inventory availability, and saves order with Outbox event."
+          requirements:
+            - REQ-ORDER-001
+            - NFR-AVAIL-001
+            - NFR-THROUGHPUT-001
+          deployment:
+            replicas: 4
+
+        - id: order-db
+          name: "Order & Inventory PostgreSQL Database"
+          type: relational_database
+          technology: "PostgreSQL 16"
+          responsibility: "Authoritative relational datastore for orders, inventory balances, and outbox events."
+          requirements:
+            - REQ-ORDER-001
+          data:
+            ownership: "order-domain"
+          deployment:
+            replicas: 2
+
+        - id: payment-queue
+          name: "Payment Processing Queue"
+          type: message_queue
+          technology: "RabbitMQ"
+          responsibility: "Buffers payment dispatch jobs decoupled from client checkout requests."
+          requirements:
+            - REQ-PAY-001
+          messaging:
+            delivery_semantics: at_least_once
+            overload_policy: "alert_and_throttle_ingress"
+            retention_period: "7d"
+
+        - id: payment-dlq
+          name: "Payment Dead Letter Queue"
+          type: message_queue
+          technology: "RabbitMQ DLQ"
+          responsibility: "Quarantine queue for permanently failing payments or corrupted cards."
+          requirements:
+            - REQ-PAY-001
+          messaging:
+            overload_policy: "alert_finance_team"
+
+        - id: payment-worker
+          name: "Payment Dispatch Worker"
+          type: background_worker
+          technology: "Rust"
+          responsibility: "Consumes payment events, issues idempotent charges against Stripe, and records receipt."
+          requirements:
+            - REQ-PAY-001
+            - REQ-INV-001
+          deployment:
+            replicas: 4
+          behavior:
+            idempotent: true
+            idempotency_key: "order_id"
+            retry_policy:
+              max_attempts: 4
+              backoff: exponential
+              dead_letter_target: payment-dlq
+
+      connections:
+        - id: conn-user-checkout
+          from: shopper
+          to: checkout-api
+          protocol: synchronous
+          transport: https
+          purpose: "Submit order checkout payload."
+
+        - id: conn-checkout-db
+          from: checkout-api
+          to: order-db
+          protocol: synchronous
+          transport: tcp
+          purpose: "Write order and outbox record in a single local transaction."
+
+        - id: conn-checkout-queue
+          from: checkout-api
+          to: payment-queue
+          protocol: asynchronous
+          transport: amqp
+          purpose: "Relay outbox events to payment queue."
+
+        - id: conn-queue-worker
+          from: payment-queue
+          to: payment-worker
+          protocol: asynchronous
+          transport: amqp
+          purpose: "Dispatch payment jobs to background workers."
+
+        - id: conn-worker-stripe
+          from: payment-worker
+          to: stripe-payment-gateway
+          protocol: synchronous
+          transport: https
+          purpose: "Execute idempotent charge against payment gateway."
+
+        - id: conn-worker-db
+          from: payment-worker
+          to: order-db
+          protocol: synchronous
+          transport: tcp
+          purpose: "Update order status to PAID and decrement inventory."

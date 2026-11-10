@@ -1,0 +1,119 @@
+archbench:
+  spec_version: "0.1"
+  project: payment-ledger-optimal
+  description: Optimal Resilient Architecture for Transaction Processing
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process Transaction operations.
+      verification: architecture_check
+    - id: NFR-01
+      category: latency
+      priority: must
+      statement: p99 response < 50ms
+      verification: architecture_check
+      target:
+        p99_ms: 50
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: optimal-pipeline
+      name: Optimal Transaction Pipeline
+      description: Production-grade architecture with HA, outbox, idempotent worker,
+        and DLQ.
+      decisions:
+        - id: ADR-001
+          title: Transactional Outbox
+          choice: Outbox Pattern
+          context: Prevent dual write.
+          status: accepted
+      components:
+        - id: ledger-api
+          name: Transaction API
+          type: service
+          technology: Go
+          responsibility: Ingress handler for Transaction.
+          requirements:
+            - REQ-01
+            - NFR-01
+          deployment:
+            replicas: 3
+        - id: ledger-db
+          name: Transaction Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Stores Transaction records.
+          data:
+            ownership: ledger-domain
+          deployment:
+            replicas: 2
+        - id: ledger-queue
+          name: Transaction Queue
+          type: message_queue
+          technology: RabbitMQ
+          responsibility: Buffers async Transaction jobs.
+          messaging:
+            overload_policy: alert_and_drop_oldest
+            delivery_semantics: at_least_once
+        - id: ledger-dlq
+          name: Transaction DLQ
+          type: message_queue
+          technology: RabbitMQ DLQ
+          responsibility: Quarantine queue.
+          messaging:
+            overload_policy: alert_on_call
+        - id: ledger-worker
+          name: Transaction Worker
+          type: background_worker
+          technology: Rust
+          responsibility: Processes Transaction jobs.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 3
+          behavior:
+            idempotent: true
+            idempotency_key: ledger_id
+            retry_policy:
+              max_attempts: 3
+              backoff: exponential
+              dead_letter_target: ledger-dlq
+      connections:
+        - id: c31-user-api
+          from: end-user
+          to: ledger-api
+          protocol: synchronous
+          transport: https
+        - id: c31-api-db
+          from: ledger-api
+          to: ledger-db
+          protocol: synchronous
+          transport: tcp
+        - id: c31-api-queue
+          from: ledger-api
+          to: ledger-queue
+          protocol: asynchronous
+          transport: amqp
+        - id: c31-queue-worker
+          from: ledger-queue
+          to: ledger-worker
+          protocol: asynchronous
+          transport: amqp

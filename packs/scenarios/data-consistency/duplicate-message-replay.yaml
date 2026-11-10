@@ -1,0 +1,44 @@
+id: data_consistency.message.duplicate_replay
+version: 1
+name: Duplicate Message Replay During Broker Rebalance
+category: queue
+level: analytical
+
+preconditions:
+  required_components:
+    - message_queue
+    - background_worker
+
+inputs:
+  rebalance_frequency_per_day:
+    type: integer
+    default: 4
+  messages_inflight_per_worker:
+    type: integer
+    default: 50
+  active_workers:
+    type: integer
+    default: 10
+
+simulation:
+  daily_duplicate_candidates: "inputs.rebalance_frequency_per_day * inputs.messages_inflight_per_worker * inputs.active_workers"
+
+assertions:
+  - id: check-duplicate-risk-magnitude
+    description: Quantify daily message duplicate delivery candidates resulting from consumer rebalances
+    condition: simulation.daily_duplicate_candidates <= 10000
+    severity: info
+
+  - id: check-idempotency-requirement
+    description: Any system processing at-least-once queues will experience duplicate messages daily
+    condition: simulation.daily_duplicate_candidates > 0
+    severity: warning
+
+learning:
+  concept: At-Least-Once Delivery & Idempotency Enforcement
+  explanation: >
+    Under distributed messaging protocols (e.g. SQS, Kafka, RabbitMQ), consumer node rebalances,
+    transient heartbeating timeouts, and network retries guarantee that duplicate messages will be delivered.
+    Without idempotency keys and deduplication storage, duplicate deliveries result in duplicate financial charges,
+    double shipments, or corrupted aggregate counters.
+

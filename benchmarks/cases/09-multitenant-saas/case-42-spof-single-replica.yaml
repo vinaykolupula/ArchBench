@@ -1,0 +1,75 @@
+archbench:
+  spec_version: "0.1"
+  project: multitenant-saas-spof
+  description: SPOF in TenantWorkspace Ingress
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Process TenantWorkspace requests.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: spof-alternative
+      name: Single Replica Articulation Point
+      description: Gateway with 1 replica; SPOF.
+      components:
+        - id: tenant-gw
+          name: TenantWorkspace Gateway
+          type: api_gateway
+          technology: Envoy
+          responsibility: Single gateway instance.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 1
+        - id: tenant-svc
+          name: TenantWorkspace Service
+          type: service
+          technology: Go
+          responsibility: Backend logic.
+          deployment:
+            replicas: 3
+        - id: tenant-db
+          name: TenantWorkspace Store
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Datastore.
+          data:
+            ownership: tenant-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c42-user-gw
+          from: end-user
+          to: tenant-gw
+          protocol: synchronous
+          transport: https
+        - id: c42-gw-svc
+          from: tenant-gw
+          to: tenant-svc
+          protocol: synchronous
+          transport: http
+        - id: c42-svc-db
+          from: tenant-svc
+          to: tenant-db
+          protocol: synchronous
+          transport: tcp

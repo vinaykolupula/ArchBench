@@ -1,0 +1,82 @@
+archbench:
+  spec_version: "0.1"
+  project: rag-document-pipeline-shared-db
+  description: Shared Database Coupling for Document
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Manage Document state.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: shared-db-alt
+      name: Shared Database Anti-Pattern
+      description: Two services directly mutating the same database.
+      components:
+        - id: doc-read-svc
+          name: Document Query Service
+          type: service
+          technology: Go
+          responsibility: Query service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: doc-write-svc
+          name: Document Mutation Service
+          type: service
+          technology: Java
+          responsibility: Write service.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: doc-master-db
+          name: Document Shared Database
+          type: relational_database
+          technology: PostgreSQL 16
+          responsibility: Shared datastore.
+          data:
+            ownership: doc-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c24-user-read
+          from: end-user
+          to: doc-read-svc
+          protocol: synchronous
+          transport: https
+        - id: c24-user-write
+          from: end-user
+          to: doc-write-svc
+          protocol: synchronous
+          transport: https
+        - id: c24-read-db
+          from: doc-read-svc
+          to: doc-master-db
+          protocol: synchronous
+          transport: tcp
+        - id: c24-write-db
+          from: doc-write-svc
+          to: doc-master-db
+          protocol: synchronous
+          transport: tcp

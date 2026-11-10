@@ -1,0 +1,99 @@
+archbench:
+  spec_version: "0.1"
+  project: url-shortener-sync-chain
+  description: URL Shortener with 4 Synchronous Hops from Ingress to Database
+  authors:
+    - ArchBench Benchmark Suite
+system:
+  context:
+    users:
+      - id: end-user
+        name: End User
+    external_systems: []
+  requirements:
+    - id: REQ-01
+      category: functional
+      priority: must
+      statement: Shorten and redirect URLs.
+      verification: architecture_check
+  constraints:
+    - id: CON-001
+      category: operational
+      statement: Production deployable within corporate cloud boundaries.
+  assumptions:
+    - id: ASM-001
+      statement: Expected traffic patterns follow daily diurnal cycles.
+      status: confirmed
+      confidence: high
+      impact_if_false: medium
+architecture:
+  alternatives:
+    - id: cascading-chain
+      name: Deep Synchronous Chain
+      description: Gateway -> Auth -> Router -> Shortener -> DB (4 hops).
+      components:
+        - id: api-gw
+          name: API Gateway
+          type: api_gateway
+          technology: Kong
+          responsibility: Gateway.
+          requirements:
+            - REQ-01
+          deployment:
+            replicas: 2
+        - id: auth-proxy
+          name: Auth Proxy
+          type: service
+          technology: Node.js
+          responsibility: Token checks.
+          deployment:
+            replicas: 2
+        - id: router-svc
+          name: Routing Service
+          type: service
+          technology: Go
+          responsibility: Tenant routing.
+          deployment:
+            replicas: 2
+        - id: shortener-core
+          name: Core Shortener
+          type: service
+          technology: Rust
+          responsibility: Short URL generator.
+          deployment:
+            replicas: 2
+        - id: sql-store
+          name: SQL Database
+          type: relational_database
+          technology: PostgreSQL
+          responsibility: Datastore.
+          data:
+            ownership: shortener-domain
+          deployment:
+            replicas: 2
+      connections:
+        - id: c05-user-gw
+          from: end-user
+          to: api-gw
+          protocol: synchronous
+          transport: https
+        - id: c05-gw-auth
+          from: api-gw
+          to: auth-proxy
+          protocol: synchronous
+          transport: http
+        - id: c05-auth-router
+          from: auth-proxy
+          to: router-svc
+          protocol: synchronous
+          transport: http
+        - id: c05-router-core
+          from: router-svc
+          to: shortener-core
+          protocol: synchronous
+          transport: grpc
+        - id: c05-core-store
+          from: shortener-core
+          to: sql-store
+          protocol: synchronous
+          transport: tcp
