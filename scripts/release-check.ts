@@ -66,14 +66,14 @@ async function main() {
       console.log("Running Gate 2: Full Monorepo TypeCheck...");
       execSync("pnpm run typecheck", { cwd: rootDir, stdio: "pipe" });
       gates.push({
-        gate: "2. TypeScript Static Analysis (11 workspace packages)",
+        gate: "2. TypeScript Static Analysis (13 workspace packages)",
         durationMs: Date.now() - start,
         passed: true,
       });
     } catch (err: any) {
       allPassed = false;
       gates.push({
-        gate: "2. TypeScript Static Analysis (11 workspace packages)",
+        gate: "2. TypeScript Static Analysis (13 workspace packages)",
         durationMs: Date.now() - start,
         passed: false,
         details: err.stdout?.toString() || err.message,

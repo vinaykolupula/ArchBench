@@ -45,9 +45,15 @@ export async function evaluateCommand(filePath: string, options: EvaluateCliOpti
     }
 
     const format = (options.format || "markdown").toLowerCase();
+    if (!["markdown", "json", "summary"].includes(format)) {
+      console.error(pc.red(`✖ Unsupported format "${format}". Supported formats: markdown, json, summary.`));
+      process.exitCode = 1;
+      return;
+    }
 
     if (options.output) {
       const outputPath = path.resolve(baseDir, options.output);
+      await fs.mkdir(path.dirname(outputPath), { recursive: true });
       const content = format === "json" ? jsonReport : markdownReport;
       await fs.writeFile(outputPath, content, "utf-8");
       console.log(pc.green(`✔ Wrote evaluation report to ${outputPath}`));

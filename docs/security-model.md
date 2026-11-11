@@ -51,11 +51,11 @@ Scenario evaluations (`packs/scenarios/**/*.yaml`) test resilience against surge
 
 ---
 
-## 5. Model Context Protocol (MCP) Security
+## 5. Model Context Protocol (MCP) & Web Studio Security
 
-ArchBench's MCP Server (`@archbench/mcp-server`) connects AI coding assistants (such as Claude Desktop or Antigravity) to ArchBench:
+ArchBench's MCP Server (`@archbench/mcp-server`) connects AI coding assistants (such as Claude Code, Cursor, or Antigravity) to ArchBench:
 
-- **Standard I/O Transport**: Operates over local `stdio`. No HTTP or remote listener port is opened by default.
-- **Read-Only / Sandboxed Mutations**: MCP tools expose read methods (`archbench_validate`, `archbench_evaluate`, `archbench_get_spec`, `archbench_list_scenarios`, `archbench_list_tests`) and strictly structured mutations (`archbench_propose_diff`).
-- **Human Approval Boundary**: Agent-proposed diffs require developer confirmation prior to git checkout or branch commit.
+- **Standard I/O Transport**: Operates over local `stdio`. No remote listener port is opened by `@archbench/mcp-server`.
+- **Read-Only Evaluation Tools**: The 9 MCP tools (`archbench_validate_spec`, `archbench_evaluate`, `archbench_get_findings`, `archbench_get_spec`, `archbench_run_scenario`, `archbench_compare`, `archbench_explain_finding`, `archbench_list_scenarios`, `archbench_list_tests`) evaluate specs and return structured analysis without mutating repository files on disk.
+- **Web Studio Path Sandboxing**: `@archbench/web` restricts file reads in `/api/spec`, `/api/evaluate`, and `/api/scenarios/run` using normalized workspace and `packs/scenarios` containment checks plus symlink-target verification (`403` on traversal outside allowed directories), and validates all expression identifiers against prototype-chain traversal (`__proto__`, `constructor`, `prototype`).
 

@@ -138,6 +138,12 @@ async function loadScenarios(
     return scenarios;
   }
 
+  if (!/^[a-zA-Z0-9_-]+$/.test(packName)) {
+    throw new Error(
+      `Invalid scenario pack name "${packName}". Pack names may contain only letters, digits, hyphens, and underscores.`
+    );
+  }
+
   const currentDir = import.meta.dirname || path.resolve(".");
   const candidateDirs = [
     path.resolve(baseDir, "packs/scenarios", packName),

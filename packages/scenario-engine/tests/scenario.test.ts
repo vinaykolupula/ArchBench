@@ -91,5 +91,21 @@ describe("Scenario Engine & Safe Expression Evaluator", () => {
     expect(result.status).toBe("not_applicable");
     expect(result.notApplicableReason).toContain('required component type "message_queue"');
   });
+
+  it("should reject unterminated strings, trailing tokens, and prototype property access", () => {
+    const ctx = { inputs: { a: 10 } };
+    expect(() => evaluateSafeExpression('inputs.a == "unterminated', ctx)).toThrow(
+      /Unterminated string literal/
+    );
+    expect(() => evaluateSafeExpression("inputs.a + 2 )", ctx)).toThrow(
+      /Unexpected trailing token/
+    );
+    expect(() => evaluateSafeExpression("inputs.constructor", ctx)).toThrow(
+      /Forbidden property access/
+    );
+    expect(() => evaluateSafeExpression("inputs.__proto__", ctx)).toThrow(
+      /Forbidden property access/
+    );
+  });
 });
 

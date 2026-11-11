@@ -54,9 +54,9 @@ program
 
 program
   .command("explain")
-  .description("Explain an architectural concept or finding rule ID in Learning Mode")
-  .argument("[concept-or-id]", "Architectural concept or rule ID (e.g. outbox, REL-002, backpressure)")
-  .option("-m, --mode <mode>", "Explanation mode: guided (deep) or quick (concise)", "guided")
+  .description("Explain an architectural concept, System Design lesson, or finding rule ID in Learning Mode")
+  .argument("[concept-or-id]", "Concept, lesson ID, or rule ID (e.g. outbox, REL-002, cap, consistent-hashing)")
+  .option("-m, --mode <mode>", "Explanation mode: guided (deep), quick (concise), or interview (Staff+ hooks)", "guided")
   .action(explainCommand);
 
 const scenarioCmd = program

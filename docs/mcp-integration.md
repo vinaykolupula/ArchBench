@@ -6,7 +6,7 @@ ArchBench provides native Model Context Protocol (MCP) support over standard I/O
 
 ## 1. Registering the Server
 
-Add the server to your IDE or agent configuration (`~/.cursor/mcp.json` or `claude_desktop_config.json`):
+Add the server to your IDE or agent configuration (`~/.cursor/mcp.json` or `claude_desktop_config.json`), or invoke the compiled binary via `archbench-mcp`:
 
 ```json
 {

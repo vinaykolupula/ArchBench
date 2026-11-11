@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useArchBench } from "../../context/ArchBenchContext.js";
 import { Play, AlertTriangle, CheckCircle2, Code, FileText } from "lucide-react";
 
 export const SpecEditorView: React.FC = () => {
-  const { yamlContent, setYamlContent, reEvaluate, evaluation, loading, error } = useArchBench();
+  const { yamlContent, setYamlContent, selectedSpecPath, reEvaluate, evaluation, loading, error } = useArchBench();
   const [dirty, setDirty] = useState<boolean>(false);
-  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<{ text: string; ok: boolean } | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setDirty(false);
+    setSaveStatus(null);
+  }, [selectedSpecPath]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setYamlContent(e.target.value);
@@ -13,11 +25,16 @@ export const SpecEditorView: React.FC = () => {
   };
 
   const handleReEvaluate = async () => {
-    setSaveStatus("Evaluating...");
-    await reEvaluate();
-    setDirty(false);
-    setSaveStatus("Evaluation updated successfully!");
-    setTimeout(() => setSaveStatus(null), 3000);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setSaveStatus({ text: "Evaluating...", ok: true });
+    const ok = await reEvaluate();
+    if (ok) {
+      setDirty(false);
+      setSaveStatus({ text: "Evaluation updated successfully!", ok: true });
+    } else {
+      setSaveStatus({ text: "Validation errors found", ok: false });
+    }
+    timeoutRef.current = setTimeout(() => setSaveStatus(null), 3500);
   };
 
   const validationErrors = evaluation?.errors || [];
@@ -47,8 +64,17 @@ export const SpecEditorView: React.FC = () => {
 
         <div className="flex items-center space-x-3">
           {saveStatus && (
-            <span className="text-xs font-mono text-emerald-400 font-semibold flex items-center mr-2">
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> {saveStatus}
+            <span
+              className={`text-xs font-mono font-semibold flex items-center mr-2 ${
+                saveStatus.ok ? "text-emerald-400" : "text-amber-400"
+              }`}
+            >
+              {saveStatus.ok ? (
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+              ) : (
+                <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {saveStatus.text}
             </span>
           )}
           <button

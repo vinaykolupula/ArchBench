@@ -28,19 +28,20 @@ export async function explainCommand(topic?: string, options: ExplainCliOptions 
   const mode = options.mode || "guided";
 
   if (!topic) {
-    console.log(pc.bold(`\nArchBench Learning Mode: Architectural Concepts Catalog\n`));
+    console.log(pc.bold(`\nArchBench Academy & Learning Mode: Architectural Concepts Catalog\n`));
     const catalog = listLearningConcepts();
     for (const card of catalog) {
       console.log(`  • ${pc.bold(card.concept)}: ${pc.dim(card.title)}`);
       console.log(`    ${pc.dim(card.summary)}`);
       console.log(`    ${pc.cyan(`archbench explain ${card.id}`)}\n`);
     }
+    console.log(pc.dim(`Tip: Try --mode interview for Staff+ interview hooks & trade-off matrices.\n`));
     return;
   }
 
-  // Check if topic is a fitness test rule ID (e.g. REL-002)
+  // Check if topic is a fitness test rule ID (e.g. REL-002) or resolve directly
   const lookupQuery = RULE_ID_TO_CONCEPT[topic.toUpperCase()] || topic;
-  const card = getLearningCard(lookupQuery);
+  const card = getLearningCard(lookupQuery) || getLearningCard(topic);
 
   if (!card) {
     console.error(pc.red(`✖ No architectural concept found matching "${topic}".`));

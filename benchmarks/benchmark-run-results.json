@@ -1,5 +1,5 @@
 {
-  "evaluatedAt": "2026-11-10T20:09:34.920Z",
+  "evaluatedAt": "2026-11-11T13:29:02.902Z",
   "totalCases": 50,
   "schemaValidationRate": 1,
   "metrics": {
@@ -10,7 +10,7 @@
     "recall": 1,
     "f1Score": 1
   },
-  "totalDurationMs": 66,
+  "totalDurationMs": 70,
   "cases": [
     {
       "id": "case-01-optimal-simple",
@@ -23,7 +23,7 @@
       "truePositives": [],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 8
+      "durationMs": 9
     },
     {
       "id": "case-02-justified-cache",
@@ -36,7 +36,7 @@
       "truePositives": [],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 2
+      "durationMs": 3
     },
     {
       "id": "case-03-speculative-microservices",
@@ -64,7 +64,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 6
+      "durationMs": 5
     },
     {
       "id": "case-04-unbounded-retries",
@@ -137,7 +137,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "id": "case-08-dual-write-no-outbox",
@@ -156,7 +156,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "id": "case-09-missing-dlq-quarantine",
@@ -194,7 +194,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "id": "case-11-optimal-resilient",
@@ -245,7 +245,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-14-shared-database-coupling",
@@ -283,7 +283,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-16-optimal-resilient",
@@ -296,7 +296,7 @@
       "truePositives": [],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 3
     },
     {
       "id": "case-17-spof-single-replica",
@@ -404,7 +404,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "id": "case-23-non-idempotent-worker",
@@ -423,7 +423,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "id": "case-24-shared-database-coupling",
@@ -461,7 +461,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-26-optimal-resilient",
@@ -493,7 +493,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-28-non-idempotent-worker",
@@ -512,7 +512,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "id": "case-29-shared-database-coupling",
@@ -550,7 +550,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-31-optimal-resilient",
@@ -563,7 +563,7 @@
       "truePositives": [],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "id": "case-32-spof-single-replica",
@@ -582,7 +582,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "id": "case-33-non-idempotent-worker",
@@ -671,7 +671,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "id": "case-38-non-idempotent-worker",
@@ -690,7 +690,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "id": "case-39-shared-database-coupling",
@@ -709,7 +709,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "id": "case-40-unmapped-requirement",
@@ -741,7 +741,7 @@
       "truePositives": [],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "id": "case-42-spof-single-replica",
@@ -760,7 +760,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-43-non-idempotent-worker",
@@ -779,7 +779,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "id": "case-44-shared-database-coupling",
@@ -849,7 +849,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "id": "case-48-non-idempotent-worker",
@@ -868,7 +868,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "id": "case-49-shared-database-coupling",
@@ -887,7 +887,7 @@
       ],
       "falsePositives": [],
       "falseNegatives": [],
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "id": "case-50-unmapped-requirement",

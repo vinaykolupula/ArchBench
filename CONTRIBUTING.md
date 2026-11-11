@@ -52,7 +52,10 @@ The root `package.json` provides scripts to manage all packages across the monor
 | `pnpm typecheck` | Runs `tsc --noEmit` across all 13 workspace packages. |
 | `pnpm test` | Runs the Vitest test suite across all packages. |
 | `pnpm ui` | Launches the interactive Web Studio on `http://localhost:3000`. |
+| `pnpm run dev:ui` | Starts the Web Studio backend server directly in watch mode via `tsx`. |
 | `pnpm cli <args>` | Runs the `archbench` CLI. |
+| `pnpm mcp` | Starts the `@archbench/mcp-server` over stdio. |
+| `pnpm run validate:examples` | Validates all 5 golden reference specifications under `examples/`. |
 | `pnpm run benchmark` | Runs the 50-case empirical benchmark harness. |
 | `pnpm run release:check` | Executes all 5 pre-release verification gates. |
 

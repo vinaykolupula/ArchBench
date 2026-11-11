@@ -59,9 +59,9 @@ describe("@archbench/synthesis", () => {
     expect(result.verdict.recommendedAlternativeId).toBeTruthy();
     expect(result.verdict.evolutionTriggers.length).toBeGreaterThanOrEqual(3);
 
-    // Verify metrics exist on each candidate
+    // Verify metrics exist and synthesized alternatives pass fitness checks
     for (const alt of result.alternatives) {
-      expect(alt.metrics.healthScore).toBeGreaterThanOrEqual(0);
+      expect(alt.metrics.healthScore).toBeGreaterThanOrEqual(85);
       expect(alt.metrics.estimatedMonthlyCostUsd).toBeGreaterThan(0);
       expect(alt.metrics.maxThroughputRps).toBeGreaterThan(0);
       expect(alt.metrics.latencySurgeP99Ms).toBeGreaterThan(0);
@@ -74,5 +74,16 @@ describe("@archbench/synthesis", () => {
     }
     expect(validation.valid).toBe(true);
     expect(validation.errors).toHaveLength(0);
+  });
+
+  it("produces schema-valid passing architectures across all 6 system design presets", async () => {
+    for (const preset of SYSTEM_DESIGN_PRESETS) {
+      const result = await synthesizeAndBenchmarkArchitecture(preset.brief);
+      const validation = validateArchSpec(result.fullArchSpec);
+      expect(validation.valid).toBe(true);
+      for (const alt of result.alternatives) {
+        expect(alt.metrics.healthScore).toBeGreaterThanOrEqual(90);
+      }
+    }
   });
 });

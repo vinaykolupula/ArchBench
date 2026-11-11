@@ -1,13 +1,21 @@
-# ArchBench
-
 <div align="center">
 
-**Test your architecture. Challenge your assumptions.**
+<img src="./assets/branding/Banner.png" alt="ArchBench — Design, Test, Evaluate" width="760" />
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.base.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+[![System Design](https://img.shields.io/badge/System%20Design-Studio-0ea5e9.svg)](#interactive-web-studio)
+[![HLD](https://img.shields.io/badge/HLD-Architecture-6366f1.svg)](ARCHITECTURE.md)
+[![Distributed Systems](https://img.shields.io/badge/Distributed%20Systems-Simulators-10b981.svg)](#key-capabilities)
+[![Fitness Tests](https://img.shields.io/badge/ArchEval-Fitness%20Tests-14b8a6.svg)](#key-capabilities)
+[![MCP](https://img.shields.io/badge/MCP-Agent%20Ready-f59e0b.svg)](docs/mcp-integration.md)
+
+# ArchBench
+
+**Test your architecture. Challenge your assumptions.**
 
 *An open-source framework for deterministic system design reasoning, architecture evaluation, and failure-driven validation—built for developers and AI coding agents.*
 
@@ -129,9 +137,11 @@ Side-by-side evaluation of competing architectural choices, generating trade-off
 
 ### 8. Interactive Web Studio (`@archbench/web`)
 A local visual workbench featuring a **Grey Chrome, Brushed Titanium & Architectural Drafting Desk** aesthetic:
+- **Focused Home & Browse Designs Gallery:** Jump directly into **Design System**, **Learn**, or **Browse Designs** across workspace specs and 15 classic system blueprints.
 - **Precision Topology Desk:** Interactive canvas with millimeter graph paper, architectural swimlanes, and collision-avoidance detour routing.
-- **System Design Intake Studio:** Calibrated hardware sliders for RPS, P99 Latency, Availability, Budget, and Team Size.
-- **Stress Testing Laboratory:** 1x to 20x traffic surge simulation slider with live telemetry readout.
+- **System Design Intake Studio:** Calibrated hardware sliders for RPS, P99 Latency, Availability, Budget, and Team Size synthesizing 3 contrasting candidate architectures.
+- **ArchBench Academy (`@archbench/learning-mode`):** 32 beginner-to-staff lessons across 5 tracks, 10 interactive simulators (Hash Ring, Quorum CAP, Token Bucket, Outbox CDC, Geohash, etc.), 3 live Break & Fix YAML labs, and an Interview Primer (4-stage delivery framework, BOE capacity estimator, 15 case studies, and 42 flashcards).
+- **Stress Testing Laboratory:** 1x to 20x traffic surge simulation slider with live telemetry readout and blast radius illumination.
 - **Live YAML Spec Editor:** In-browser specification editor with real-time graph re-evaluation.
 
 ### 9. Model Context Protocol Server (`@archbench/mcp-server`)
@@ -171,13 +181,14 @@ Launch the interactive Web Studio:
 pnpm ui
 ```
 
-Or target a specific port:
+Or target a specific port or specification file:
 
 ```bash
 pnpm ui -p 3000
+pnpm cli ui examples/notification-platform/archspec.yaml
 ```
 
-Open `http://localhost:3000` to access the visual Topology Desk, System Design Intake Studio, Stress Lab, and Spec Editor.
+Open `http://localhost:3000` to access the Home launchpad, Browse Designs gallery, visual Topology Desk, System Design Intake Studio, Stress Lab, YAML Editor, and ArchBench Academy. Custom logos, diagrams, and screenshots can be placed in `assets/` (see [assets/README.md](assets/README.md)).
 
 ---
 
@@ -207,6 +218,10 @@ pnpm cli explain outbox --mode quick
 
 # Export Mermaid architecture diagram
 pnpm cli diagram examples/notification-platform/archspec.yaml
+
+# Discover registered fitness tests and scenario packs
+pnpm cli tests list
+pnpm cli scenarios list
 ```
 
 ---
@@ -253,7 +268,7 @@ pnpm run release:check
 Summary of gates enforced:
 - **Gate 1:** JSON Schema Draft 2020-12 Compile & Validation
 - **Gate 2:** Monorepo TypeScript Static Analysis (`13 workspace packages, 0 errors`)
-- **Gate 3:** Vitest Unit & Integration Suites (`12 test files, 45/45 tests passing`)
+- **Gate 3:** Vitest Unit & Integration Suites (`16 test files, 67/67 tests passing`)
 - **Gate 4:** Golden Reference Examples Validation (`5 reference architectures`)
 - **Gate 5:** 50-Case Empirical Benchmark Suite (`100% Precision, 100% Recall, 100% F1 Score`)
 

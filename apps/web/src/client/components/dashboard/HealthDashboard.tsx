@@ -9,10 +9,11 @@ import {
   FileText,
   Lightbulb,
   ExternalLink,
+  GraduationCap,
 } from "lucide-react";
 
 export const HealthDashboard: React.FC = () => {
-  const { evaluation, activeAltId, setActiveTab } = useArchBench();
+  const { evaluation, activeAltId, setActiveTab, openLessonInLearn } = useArchBench();
   const [severityFilter, setSeverityFilter] = useState<string>("all");
 
   const activeAlt = evaluation?.evaluation?.alternatives?.[activeAltId];
@@ -26,7 +27,8 @@ export const HealthDashboard: React.FC = () => {
 
   const score = activeAlt.score ?? activeAlt.summary?.score ?? 100;
   const passed = activeAlt.passed ?? (score >= 90);
-  const { totalFindings, criticalCount, warningCount, requirementCoverage } = activeAlt.summary;
+  const { totalFindings, criticalCount, errorCount = 0, warningCount, requirementCoverage } = activeAlt.summary;
+  const criticalAndErrorCount = criticalCount + errorCount;
   const coveragePct = requirementCoverage?.percentage ?? 100;
 
   const scoreColor =
@@ -130,9 +132,9 @@ export const HealthDashboard: React.FC = () => {
             </div>
             <div className="paper-card drafting-corners px-4 py-3 rounded-xl text-center border border-zinc-700/80 bg-[#16181e] font-mono min-w-[105px]">
               <XCircle className="w-4 h-4 mx-auto text-red-400 mb-1" />
-              <span className="block text-xl font-bold text-red-300">{criticalCount}</span>
+              <span className="block text-xl font-bold text-red-300">{criticalAndErrorCount}</span>
               <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider whitespace-nowrap block mt-1">
-                CRITICAL
+                CRIT / ERRORS
               </span>
             </div>
             <div className="paper-card drafting-corners px-4 py-3 rounded-xl text-center border border-zinc-700/80 bg-[#16181e] font-mono min-w-[105px]">
@@ -168,7 +170,7 @@ export const HealthDashboard: React.FC = () => {
 
           {/* Severity Filter Pills */}
           <div className="flex items-center space-x-1.5 bg-[#121418] border border-zinc-800 p-1 rounded-xl text-xs font-mono">
-            {["all", "critical", "warning", "info"].map((sev) => (
+            {["all", "critical", "error", "warning", "info"].map((sev) => (
               <button
                 key={sev}
                 onClick={() => setSeverityFilter(sev)}
@@ -281,6 +283,19 @@ export const HealthDashboard: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Cross-Studio Learn Deep Link */}
+                  <div className="mt-3 pt-2.5 border-t border-zinc-800/70 flex items-center justify-end">
+                    <button
+                      onClick={() =>
+                        openLessonInLearn(finding.ruleId || finding.testId || "outbox", "rule")
+                      }
+                      className="chrome-button px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 text-emerald-300 hover:text-emerald-200 cursor-pointer"
+                    >
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      <span>Learn Concept &amp; Simulator -&gt;</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}

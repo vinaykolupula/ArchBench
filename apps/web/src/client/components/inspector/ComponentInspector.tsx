@@ -10,6 +10,7 @@ import {
   BookOpen,
   FileCheck,
   Server,
+  GraduationCap,
 } from "lucide-react";
 
 export const ComponentInspector: React.FC = () => {
@@ -20,6 +21,7 @@ export const ComponentInspector: React.FC = () => {
     setSelectedEdge,
     evaluation,
     activeAltId,
+    openLessonInLearn,
   } = useArchBench();
 
   if (!selectedNode && !selectedEdge) return null;
@@ -38,10 +40,14 @@ export const ComponentInspector: React.FC = () => {
   );
 
   // Find requirements served by this component
+  const activeSpecAlt = spec?.architecture?.alternatives?.find((a: any) => a.id === activeAltId);
+  const activeSpecComp = activeSpecAlt?.components?.find((c: any) => c.id === selectedNode?.id);
+  const mappedReqIds = new Set<string>([
+    ...(activeSpecComp?.requirements || []),
+    ...(justification?.mappedRequirements || []),
+  ]);
   const servedReqs =
-    spec?.requirements?.filter((r: any) =>
-      r.mapped_components?.includes(selectedNode?.id)
-    ) || [];
+    spec?.system?.requirements?.filter((r: any) => mappedReqIds.has(r.id)) || [];
 
   return (
     <aside className="w-80 md:w-96 border-l border-zinc-800 bg-[#16181e] flex flex-col h-full overflow-y-auto text-zinc-200 z-30 shadow-2xl transition-all select-text font-mono">
@@ -147,7 +153,7 @@ export const ComponentInspector: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-zinc-200 font-bold">[{req.id}]</span>
                         <span className="text-[9px] uppercase text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">
-                          {req.type}
+                          {req.category || req.priority || "req"}
                         </span>
                       </div>
                       <p className="text-zinc-300 text-[11px] mt-1 leading-relaxed">
@@ -162,6 +168,22 @@ export const ComponentInspector: React.FC = () => {
                 </p>
               )}
             </div>
+
+            {/* Academy Entity Pattern Deep-Link */}
+            {selectedNode && (
+              <button
+                onClick={() =>
+                  openLessonInLearn(
+                    selectedNode.componentType || selectedNode.kind || "service",
+                    "component"
+                  )
+                }
+                className="w-full chrome-button px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 text-emerald-300 hover:text-emerald-200 cursor-pointer"
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Study Entity Pattern -&gt;</span>
+              </button>
+            )}
 
             {/* Connections */}
             <div className="space-y-3">

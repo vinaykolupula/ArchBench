@@ -1,6 +1,6 @@
-# ArchSpec v0.1 Specification Format Guide
+# ArchSpec Specification Format Guide
 
-**ArchSpec** is the formal, versioned YAML/JSON architecture modeling specification powering the ArchBench framework.
+**ArchSpec** is the formal, versioned YAML/JSON architecture modeling specification powering the ArchBench framework (validated against JSON Schema Draft 2020-12 in `schemas/archspec/v1.schema.json` and `schemas/archspec/v0.1.schema.json`).
 
 ---
 

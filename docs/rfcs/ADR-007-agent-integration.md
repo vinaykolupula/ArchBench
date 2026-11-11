@@ -16,15 +16,18 @@ To make ArchBench accessible to AI agents without creating divergent execution p
 
 We chose to implement the **Model Context Protocol (MCP)** via `@archbench/mcp-server` as a thin adapter layer over the exact same core application services used by the CLI:
 1. **Shared Service Layer**:
-   - Both `apps/cli` and `apps/mcp-server` invoke identical core packages (`@archbench/core`, `@archbench/archeval`, `@archbench/scenarios`).
+   - Both `apps/cli` and `apps/mcp-server` invoke identical core packages (`@archbench/core`, `@archbench/archeval`, `@archbench/scenario-engine`).
    - Rule evaluation, scoring formulas, and validation logic remain 100% consistent regardless of whether invoked by human CLI or AI agent.
-2. **Exposed MCP Tools**:
-   - `archbench_validate`: Validate syntax and schema of an ArchSpec file.
-   - `archbench_evaluate`: Execute full fitness evaluation and scenario suite.
-   - `archbench_get_spec`: Inspect parsed components, connections, and requirements.
+2. **Exposed MCP Tools (9 Read-Only Evaluation & Reasoning Tools)**:
+   - `archbench_validate_spec`: Validate syntax, schema, and synchronous cycles of an ArchSpec file or YAML string.
+   - `archbench_evaluate`: Execute full fitness evaluation, requirement coverage, and JustEnough complexity audit.
+   - `archbench_get_findings`: Query findings filtered by severity or rule category.
+   - `archbench_get_spec`: Inspect parsed requirements, constraints, assumptions, components, and ADRs.
+   - `archbench_run_scenario`: Run failure scenario packs (`core-failures`, `scalability`, `data-consistency`).
+   - `archbench_compare`: Compare candidate alternatives side-by-side with conditional recommendations.
+   - `archbench_explain_finding`: Retrieve pedagogical learning cards and remediation strategies.
    - `archbench_list_scenarios`: Discover available stress scenarios.
    - `archbench_list_tests`: Inspect registered fitness test rules.
-   - `archbench_propose_diff`: Generate structured architectural diffs between candidate alternatives.
 3. **Transport**:
    - Standard I/O (`stdio`) transport for local execution with zero network exposure.
 

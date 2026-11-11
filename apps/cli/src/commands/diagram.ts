@@ -55,7 +55,8 @@ export async function diagramCommand(filePath: string, options: DiagramOptions =
     const mermaid = graph.toMermaid({ direction: options.direction ?? "TD" });
 
     if (options.output) {
-      const outputPath = path.resolve(process.cwd(), options.output);
+      const outputPath = path.resolve(baseDir, options.output);
+      await fs.mkdir(path.dirname(outputPath), { recursive: true });
       await fs.writeFile(outputPath, mermaid, "utf-8");
       console.log(pc.green(`✔ Exported Mermaid diagram to ${outputPath}`));
     } else {

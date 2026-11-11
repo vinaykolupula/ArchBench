@@ -62,6 +62,9 @@ function tokenize(expr: string): Token[] {
         str += expr[i];
         i++;
       }
+      if (i >= expr.length) {
+        throw new SyntaxError(`Unterminated string literal in scenario expression: "${expr}"`);
+      }
       i++; // skip closing quote
       tokens.push({ type: "STRING", value: str });
       continue;
@@ -108,6 +111,11 @@ class Parser {
 
   public parse(): any {
     const result = this.parseLogicalOr();
+    if (this.pos < this.tokens.length) {
+      throw new SyntaxError(
+        `Unexpected trailing token "${this.tokens[this.pos]?.value}" in expression`
+      );
+    }
     return result;
   }
 
@@ -229,7 +237,17 @@ class Parser {
     const parts = pathStr.split(".");
     let curr: any = this.context;
     for (const part of parts) {
-      if (curr === undefined || curr === null) return undefined;
+      if (part === "__proto__" || part === "constructor" || part === "prototype") {
+        throw new Error(`Forbidden property access "${part}" in scenario expression`);
+      }
+      if (
+        curr === undefined ||
+        curr === null ||
+        typeof curr !== "object" ||
+        !Object.prototype.hasOwnProperty.call(curr, part)
+      ) {
+        return undefined;
+      }
       curr = curr[part];
     }
     return curr;

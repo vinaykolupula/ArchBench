@@ -141,7 +141,7 @@ function calculateRequirementCoverage(
     }
   }
 
-  const mapped = mappedReqIds.size;
+  const mapped = allReqs.filter((r) => mappedReqIds.has(r.id)).length;
   const percentage = total > 0 ? Math.round((mapped / total) * 100) : 100;
 
   return {

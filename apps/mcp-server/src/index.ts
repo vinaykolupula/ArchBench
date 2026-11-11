@@ -183,6 +183,18 @@ server.tool(
         throw new Error(`Alternative "${targetAltId}" not found in specification.`);
       }
 
+      if (!/^[a-zA-Z0-9_-]+$/.test(pack)) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Invalid scenario pack name "${pack}". Pack names may contain only letters, digits, hyphens, and underscores.`,
+            },
+          ],
+        };
+      }
+
       const currentDir = import.meta.dirname || path.resolve(".");
       const candidateDirs = [
         path.resolve(process.cwd(), "packs/scenarios", pack),
@@ -254,10 +266,10 @@ server.tool(
 // 6. Tool: archbench_explain_finding
 server.tool(
   "archbench_explain_finding",
-  "Retrieve Learning Mode architectural education, trade-off analysis, and remediation options for a concept or finding ID.",
+  "Retrieve Learning Mode architectural education, trade-off analysis, and interview hooks for any concept, lesson, or rule ID.",
   {
-    conceptOrId: z.string().describe("Concept name or rule ID (e.g. outbox, REL-002, backpressure, spof)."),
-    mode: z.enum(["guided", "quick"]).optional().default("guided").describe("Explanation mode: guided (deep) or quick (concise)."),
+    conceptOrId: z.string().describe("Concept, lesson slug, or rule ID (e.g. outbox, REL-002, backpressure, cap, consistent-hashing, sharding)."),
+    mode: z.enum(["guided", "quick", "interview"]).optional().default("guided").describe("Explanation mode: guided (deep), quick (concise), or interview (Senior/Staff hooks)."),
   },
   async ({ conceptOrId, mode }) => {
     const card = getLearningCard(conceptOrId);
@@ -266,7 +278,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `No architectural learning card found matching "${conceptOrId}". Try concepts like: backpressure, idempotency, outbox, sync-chains, spof, bounded-retries, dlq, just-enough.`,
+            text: `No architectural learning card found matching "${conceptOrId}". Try concepts like: backpressure, idempotency, outbox, sync-chains, spof, bounded-retries, dlq, just-enough, cap, quorum, consistent-hashing, sharding, rate-limiter, snowflake, sagas.`,
           },
         ],
       };

@@ -16,16 +16,19 @@ When acting as an AI Software Architect:
 
 ## 2. MCP Tools Reference
 
-The `@archbench/mcp-server` exposes 6 tools over standard I/O:
+The `@archbench/mcp-server` exposes **9 read-only tools** over standard I/O (`StdioServerTransport`):
 
 | Tool Name | Purpose | When to Use |
 | :--- | :--- | :--- |
 | `archbench_validate_spec` | Validates ArchSpec YAML against JSON Schema Draft 2020-12 and checks for synchronous cycles. | Always call immediately after creating or modifying an `archspec.yaml` file. |
 | `archbench_evaluate` | Runs the full ArchEval deterministic fitness test suite, requirement coverage, and JustEnough complexity analysis. | Call to obtain an objective architecture scorecard (0-100) and complete list of findings. |
 | `archbench_get_findings` | Queries architectural findings filtered by severity (`critical`, `error`, `warning`, `info`) or category (`reliability`, `data_consistency`, `scalability`). | Use to prioritize blockers during PR reviews or iterative refinement. |
+| `archbench_get_spec` | Retrieves the parsed requirements, constraints, assumptions, components, and ADRs from a specification. | Use to inspect declared context before proposing changes. |
 | `archbench_run_scenario` | Simulates declarative stress scenarios (e.g. queue consumer lag, downstream provider outage, traffic spikes). | Call to empirically stress-test candidate designs against failure modes without writing code. |
 | `archbench_compare` | Compares multiple candidate alternatives (e.g. `modular-monolith` vs `distributed-microservices`) across trade-off dimensions. | Use when assisting users in architecture decision records (ADRs) or system design trade-offs. |
 | `archbench_explain_finding` | Retrieves pedagogical learning cards, trade-off explanations, and remediation strategies for any finding or concept. | Call when the user asks "Why is this a finding?" or "How do I fix REL-002?". |
+| `archbench_list_scenarios` | Discovers all available built-in scenario packs (`core-failures`, `scalability`, `data-consistency`). | Use before calling `archbench_run_scenario` to verify available packs. |
+| `archbench_list_tests` | Lists all 10 registered architecture fitness tests, optionally filtered by category. | Use to inspect active deterministic rules and severities. |
 
 ---
 

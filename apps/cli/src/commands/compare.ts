@@ -48,10 +48,16 @@ export async function compareCommand(filePath: string, options: CompareCliOption
     const comparison = compareAlternatives(evaluation);
 
     const format = (options.format || "markdown").toLowerCase();
+    if (format !== "markdown" && format !== "json") {
+      console.error(pc.red(`✖ Unsupported format "${format}". Supported formats: markdown, json.`));
+      process.exitCode = 1;
+      return;
+    }
     const content = format === "json" ? generateComparisonJson(comparison) : generateComparisonMarkdown(comparison);
 
     if (options.output) {
       const outputPath = path.resolve(baseDir, options.output);
+      await fs.mkdir(path.dirname(outputPath), { recursive: true });
       await fs.writeFile(outputPath, content, "utf-8");
       console.log(pc.green(`✔ Wrote comparison report to ${outputPath}`));
     } else {

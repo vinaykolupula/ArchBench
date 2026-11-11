@@ -47,12 +47,15 @@ export interface GraphTopology {
 
 export interface ArchitectureFinding {
   ruleId: string;
+  testId?: string;
   title: string;
   severity: "critical" | "error" | "warning" | "info";
   category: string;
   message: string;
+  summary?: string;
   affectedComponents?: string[];
   remediation?: string;
+  suggestedActions?: string[];
   location?: { line?: number; column?: number };
 }
 
@@ -149,10 +152,29 @@ export interface SimulationResult {
 }
 
 export type ActiveTab =
+  | "home"
+  | "browse"
   | "canvas"
   | "dashboard"
   | "complexity"
   | "simulator"
   | "comparison"
   | "matrix"
-  | "editor";
+  | "editor"
+  | "learn";
+
+export interface ActiveLabMission {
+  labId: string;
+  lessonId: string;
+  title: string;
+  missionBrief: string;
+  labGoalPlainEnglish?: string;
+  starterYamlSnippet?: string;
+  targetRuleIds: string[];
+  startingScore: number;
+  targetScore: number;
+  hintSteps: string[];
+  solutionSummary: string;
+  solutionArchSpecYaml: string;
+  xpReward: number;
+}

@@ -94,9 +94,14 @@ export const TopologyCanvas: React.FC = () => {
     return Math.max(maxNodesInTier * (CARD_WIDTH + 140) + 160, 1400);
   }, [rawNodes, getNodeTier]);
 
+  const nodeSignature = useMemo(() => rawNodes.map((n) => n.id).join("|"), [rawNodes]);
+
   // Compute balanced tier layout
   useEffect(() => {
-    if (!rawNodes || rawNodes.length === 0) return;
+    if (!rawNodes || rawNodes.length === 0) {
+      setNodePositions({});
+      return;
+    }
 
     const tiersMap: Record<number, GraphNodeData[]> = { 0: [], 1: [], 2: [], 3: [], 4: [] };
     rawNodes.forEach((node) => {
@@ -121,7 +126,7 @@ export const TopologyCanvas: React.FC = () => {
     });
 
     setNodePositions(positions);
-  }, [activeAltId, rawNodes.length, getNodeTier, canvasWidth]);
+  }, [activeAltId, nodeSignature, getNodeTier, canvasWidth]);
 
   // Swimlanes calculation
   const tierGroups = useMemo<TierGroup[]>(() => {
@@ -211,22 +216,28 @@ export const TopologyCanvas: React.FC = () => {
     setDraggedNodeId(null);
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.08 : 0.92;
-    const newZoom = Math.min(Math.max(zoom * factor, 0.4), 2.2);
-
-    // Zoom towards cursor
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) {
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      const rect = el.getBoundingClientRect();
       const cursorX = e.clientX - rect.left;
       const cursorY = e.clientY - rect.top;
-      const dx = (cursorX - pan.x) * (1 - factor);
-      const dy = (cursorY - pan.y) * (1 - factor);
-      setPan((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
-    }
-    setZoom(newZoom);
-  };
+      setZoom((prevZoom) => {
+        const nextZoom = Math.min(Math.max(prevZoom * factor, 0.4), 2.2);
+        const actualFactor = nextZoom / prevZoom;
+        setPan((prevPan) => ({
+          x: prevPan.x + (cursorX - prevPan.x) * (1 - actualFactor),
+          y: prevPan.y + (cursorY - prevPan.y) * (1 - actualFactor),
+        }));
+        return nextZoom;
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const resetView = () => {
     setPan({ x: 80, y: 35 });
@@ -423,7 +434,6 @@ export const TopologyCanvas: React.FC = () => {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onWheel={handleWheel}
     >
       {/* Floating Canvas Action Toolbar - Machined Grey Chrome */}
       <div className="absolute top-4 left-4 z-20 flex items-center space-x-1 chrome-chassis rounded-xl p-1.5 shadow-2xl">

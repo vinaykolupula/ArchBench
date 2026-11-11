@@ -102,11 +102,11 @@ flowchart TD
 | **`@archbench/scenario-engine`** | `packages/scenario-engine/` | Evaluates declarative failure scenarios using a safe recursive-descent AST math parser with zero runtime `eval()`. |
 | **`@archbench/comparison-engine`**| `packages/comparison-engine/`| Compares multi-alternative candidate architectures side-by-side, generating trade-off matrices and conditional recommendations. |
 | **`@archbench/report-engine`** | `packages/report-engine/` | Formats evaluation outcomes into Executive Markdown, JSON Schema v1, and Mermaid diagrams. |
-| **`@archbench/learning-mode`** | `packages/learning-mode/` | Provides interactive educational cards with real-world incident post-mortems and remediation strategies for failed rules. |
+| **`@archbench/learning-mode`** | `packages/learning-mode/` | Powers CLI remediation cards (`archbench explain`), 32 ArchBench Academy curriculum lessons, 10 simulation kernels, 3 Break & Fix YAML labs, BOE estimator, 15 case studies, and 42 flashcards. |
 | **`@archbench/archeval`** | `packages/archeval/` | Orchestrates the full evaluation pipeline, computes the health scorecard, and runs the JustEnough complexity audit. |
 | **`@archbench/synthesis`** | `packages/synthesis/` | Dynamic System Design Intake Studio, normalizer, heuristic synthesizer, and multi-candidate benchmarking harness. |
 | **`@archbench/core`** | `packages/core/` | Unified programmatic facade aggregating all engines into a single developer SDK (`ArchBenchEngine`). |
-| **`@archbench/cli`** | `apps/cli/` | Production command-line tool (`archbench`) with commands: `validate`, `evaluate`, `scenario`, `compare`, `explain`, `diagram`, `ui`. |
+| **`@archbench/cli`** | `apps/cli/` | Production command-line tool (`archbench`) with commands: `init`, `validate`, `evaluate`, `scenario`, `compare`, `explain`, `diagram`, `report`, `tests`, `scenarios`, `ui`. |
 | **`@archbench/mcp-server`** | `apps/mcp-server/` | Model Context Protocol server exposing architecture reasoning tools over stdio to Claude Code, Antigravity, and Cursor. |
 | **`@archbench/web`** | `apps/web/` | Interactive Web Studio with Grey Chrome / Technical Drafting Desk canvas, dynamic intake studio, stress lab, and spec editor. |
 
@@ -225,42 +225,60 @@ flowchart LR
 
 The Web Studio is designed as a professional engineering instrument featuring a **Grey Chrome, Brushed Titanium, and Pencil Sketch / Architectural Drafting Desk** aesthetic:
 
+- **Home Launchpad & Browse Designs Gallery:** Minimalist entry experience linking directly to **Design System** (`SystemDesignIntakeModal`), **ArchBench Academy** (`LearnStudioView`), and **Browse Designs** across workspace specs and 15 classic architecture blueprints.
+- **ArchBench Academy (`LearnStudioView`):** Interactive learning studio with 5 curriculum tracks (32 lessons), 10 interactive visual simulators, 3 live Break & Fix YAML lab missions with real-time XP verification, and an Interview Prep Primer (4-stage delivery framework, BOE capacity estimator, 15 system case studies, and 42 flashcards).
 - **Machined Titanium Chassis:** Precision 1px top highlight bevels, tactile hardware buttons, and metal rack tab bar.
 - **Precision Drafting Desk Grid:** Millimeter graph paper background with primary 40px lines and 8px subdivisions.
 - **Architectural Drafting Blocks:** Component cards featuring graphite pencil borders, uppercase monospace classification badges (`[SERVICE]`, `[MESSAGE_QUEUE]`, `[BACKGROUND_WORKER]`), technical in/out degrees, and corner `+` draftsman crosshairs.
 - **Collision-Avoidance Detour Routing:** Multi-tier edges that bypass intermediate tiers automatically route around obstacle cards in open channels.
-- **Stress Testing Laboratory:** Interactive surge simulation slider (`1x (Nominal)`, `10x (Spike)`, `20x (Extreme)`) with live queue lag telemetry and blast radius illumination.
-- **Live YAML Spec Editor:** In-browser ArchSpec YAML editor with real-time graph re-evaluation.
+- **Stress Testing Laboratory:** Interactive surge simulation slider (`1x (Nominal)` to `20x (Extreme)`) with live queue lag telemetry and blast radius illumination.
+- **Live YAML Spec Editor & Workspace Assets:** In-browser ArchSpec YAML editor with real-time graph re-evaluation, plus root `assets/` static and Vite-bundled serving at `/assets/...`.
 
 ---
 
 ## 8. Model Context Protocol (MCP) Server
 
-ArchBench implements an official MCP server in `apps/mcp-server` adhering to the open Model Context Protocol specification:
+ArchBench implements an official MCP server in `apps/mcp-server` adhering to the open Model Context Protocol specification over `StdioServerTransport`:
 
 ### Exposed MCP Tools
 
 ```json
 [
   {
-    "name": "validate_archspec",
-    "description": "Validates an ArchSpec YAML/JSON string against JSON Schema Draft 2020-12 and checks for synchronous cycles."
+    "name": "archbench_validate_spec",
+    "description": "Validates an ArchSpec YAML/JSON string or file against JSON Schema Draft 2020-12 and checks for synchronous cycles."
   },
   {
-    "name": "evaluate_architecture",
-    "description": "Runs all 10 deterministic fitness tests, JustEnough parsimony check, and produces health scorecard."
+    "name": "archbench_evaluate",
+    "description": "Runs all 10 deterministic fitness tests, JustEnough parsimony check, and produces a full health scorecard."
   },
   {
-    "name": "simulate_scenario",
-    "description": "Executes declarative failure scenarios against an architecture, returning cascade blast radius."
+    "name": "archbench_get_findings",
+    "description": "Queries evaluation findings filtered by severity (critical, error, warning, info) or rule category."
   },
   {
-    "name": "compare_alternatives",
+    "name": "archbench_get_spec",
+    "description": "Retrieves full parsed requirements, constraints, assumptions, components, connections, and ADRs."
+  },
+  {
+    "name": "archbench_run_scenario",
+    "description": "Executes a validated declarative failure scenario pack (e.g. core-failures, scalability, data-consistency) against an architecture."
+  },
+  {
+    "name": "archbench_compare",
     "description": "Compares multi-candidate architectures side-by-side, producing trade-off matrices and recommendations."
   },
   {
-    "name": "explain_rule",
-    "description": "Explains an architectural rule, rationale, anti-patterns, and remediation examples with post-mortems."
+    "name": "archbench_explain_finding",
+    "description": "Explains an architectural rule or concept with rationale, anti-patterns, remediation examples, and post-mortems."
+  },
+  {
+    "name": "archbench_list_scenarios",
+    "description": "Discovers available failure and workload scenario packs in packs/scenarios."
+  },
+  {
+    "name": "archbench_list_tests",
+    "description": "Lists all 10 registered deterministic architecture fitness tests, optionally filtered by category."
   }
 ]
 ```
@@ -294,7 +312,7 @@ pnpm run release:check
 
 1. **Gate 1:** JSON Schema Draft 2020-12 Compile & Validation
 2. **Gate 2:** Full Monorepo TypeScript Static Analysis (`13 workspace packages, 0 errors`)
-3. **Gate 3:** Vitest Unit & Integration Suites (`12 test files, 45/45 tests passing`)
+3. **Gate 3:** Vitest Unit & Integration Suites (`16 test files, 67/67 tests passing`)
 4. **Gate 4:** Golden Reference Examples Validation (`5 reference architectures`)
 5. **Gate 5:** 50-Case Empirical Benchmark Suite (`100% Precision, 100% Recall, 100% F1 Score`)
 

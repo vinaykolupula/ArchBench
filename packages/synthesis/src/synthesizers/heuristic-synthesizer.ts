@@ -30,6 +30,10 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: `${lang} / HTTP Router`,
         responsibility: "Serves all client HTTP/gRPC traffic, enforces validation, and executes domain business logic.",
         requirements: reqIds,
+        deployment: {
+          replicas: 2,
+          platform: "Managed Container Service",
+        },
       },
       {
         id: `${baseName}-primary-db`,
@@ -38,6 +42,16 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "PostgreSQL 16 Multi-AZ",
         responsibility: "Authoritative ACID relational store for accounts, entities, and state mutations.",
         requirements: [primaryReq, "NFR-AVAIL-001"],
+        deployment: {
+          replicas: 2,
+          platform: "PostgreSQL Multi-AZ",
+        },
+        data: {
+          ownership: `${baseName}-core-domain`,
+          storage_type: "ssd",
+          retention: "90d",
+          backup_frequency: "daily",
+        },
       },
       {
         id: `${baseName}-read-cache`,
@@ -46,6 +60,14 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "Redis 7 Cluster",
         responsibility: `Caches high-frequency read queries to satisfy P99 latency SLA (< ${brief.scaleTargets.p99LatencyMs}ms).`,
         requirements: ["NFR-LATENCY-001"],
+        deployment: {
+          replicas: 2,
+          platform: "Redis Cluster",
+        },
+        data: {
+          ownership: `${baseName}-cache-domain`,
+          retention: "1h",
+        },
       },
     ],
     connections: [
@@ -100,6 +122,10 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "Envoy / Cloud Gateway",
         responsibility: "SSL termination, rate limiting, and request routing.",
         requirements: ["NFR-AVAIL-001", "NFR-THROUGHPUT-001"],
+        deployment: {
+          replicas: 3,
+          platform: "Managed Edge Gateway",
+        },
       },
       {
         id: `${baseName}-ingress-api`,
@@ -108,6 +134,14 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: `${lang} / High-Performance Microservice`,
         responsibility: "Accepts incoming commands, writes to outbox table, and responds immediately.",
         requirements: [primaryReq, "NFR-LATENCY-001"],
+        deployment: {
+          replicas: 4,
+          platform: "Managed Kubernetes",
+        },
+        behavior: {
+          idempotent: true,
+          idempotency_key: "request_id",
+        },
       },
       {
         id: `${baseName}-transactional-db`,
@@ -116,6 +150,16 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "PostgreSQL 16 with Outbox Pattern",
         responsibility: "Atomic state mutations and transactional outbox event storage.",
         requirements: [primaryReq],
+        deployment: {
+          replicas: 2,
+          platform: "PostgreSQL Multi-AZ",
+        },
+        data: {
+          ownership: `${baseName}-transactional-domain`,
+          storage_type: "ssd",
+          retention: "90d",
+          backup_frequency: "daily",
+        },
       },
       {
         id: `${baseName}-work-queue`,
@@ -124,6 +168,11 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "RabbitMQ / Amazon SQS",
         responsibility: `Buffers asynchronous execution tasks during surges (up to ${brief.scaleTargets.peakRps * 2} RPS).`,
         requirements: [secondReq, "NFR-THROUGHPUT-001"],
+        messaging: {
+          delivery_semantics: "at_least_once",
+          overload_policy: "bounded_backlog_with_cloudwatch_alarm",
+          retention_period: "4d",
+        },
       },
       {
         id: `${baseName}-dead-letter-queue`,
@@ -132,6 +181,11 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "RabbitMQ DLQ / SQS DLQ",
         responsibility: "Isolates poison-pill messages and exhausted retry jobs for manual inspection.",
         requirements: [secondReq],
+        messaging: {
+          delivery_semantics: "at_least_once",
+          overload_policy: "alert_on_message_present",
+          retention_period: "14d",
+        },
       },
       {
         id: `${baseName}-async-worker`,
@@ -140,6 +194,19 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: `${secondaryLang} Worker Pool`,
         responsibility: "Consumes messages, updates transactional database, and calls downstream providers.",
         requirements: reqIds,
+        deployment: {
+          replicas: 4,
+          platform: "Managed Kubernetes",
+        },
+        behavior: {
+          idempotent: true,
+          idempotency_key: "job_id",
+          retry_policy: {
+            max_attempts: 5,
+            backoff: "exponential",
+            dead_letter_target: `${baseName}-dead-letter-queue`,
+          },
+        },
       },
     ],
     connections: [
@@ -229,6 +296,10 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "Global CDN / Anycast Gateway",
         responsibility: "DDoS mitigation, edge SSL termination, and geo-routing.",
         requirements: ["NFR-AVAIL-001"],
+        deployment: {
+          replicas: 4,
+          platform: "Global Edge Anycast",
+        },
       },
       {
         id: `${baseName}-command-service`,
@@ -237,6 +308,14 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: `${lang} / gRPC`,
         responsibility: "Validates commands and streams events to distributed partitioned log.",
         requirements: [primaryReq, "NFR-THROUGHPUT-001"],
+        deployment: {
+          replicas: 6,
+          platform: "Managed Kubernetes",
+        },
+        behavior: {
+          idempotent: true,
+          idempotency_key: "command_id",
+        },
       },
       {
         id: `${baseName}-query-service`,
@@ -245,6 +324,10 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: `${lang} / Fast HTTP`,
         responsibility: `Serves high-velocity read queries with P99 < ${brief.scaleTargets.p99LatencyMs}ms.`,
         requirements: ["NFR-LATENCY-001"],
+        deployment: {
+          replicas: 6,
+          platform: "Managed Kubernetes",
+        },
       },
       {
         id: `${baseName}-event-stream`,
@@ -253,6 +336,15 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "Apache Kafka / AWS Kinesis",
         responsibility: "Immutable, high-throughput distributed commit log with persistent event replay.",
         requirements: [secondReq, "NFR-THROUGHPUT-001"],
+        deployment: {
+          replicas: 3,
+          platform: "Managed Kafka Cluster",
+        },
+        messaging: {
+          delivery_semantics: "at_least_once",
+          overload_policy: "partition_backpressure_with_dlq_spillover",
+          retention_period: "7d",
+        },
       },
       {
         id: `${baseName}-stream-consumers`,
@@ -261,6 +353,32 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: `${lang} Consumer Group`,
         responsibility: "Consumes partitioned stream and updates distributed read model.",
         requirements: reqIds,
+        deployment: {
+          replicas: 6,
+          platform: "Managed Kubernetes",
+        },
+        behavior: {
+          idempotent: true,
+          idempotency_key: "event_id",
+          retry_policy: {
+            max_attempts: 5,
+            backoff: "exponential",
+            dead_letter_target: `${baseName}-stream-dlq`,
+          },
+        },
+      },
+      {
+        id: `${baseName}-stream-dlq`,
+        name: `${brief.name} Stream Dead Letter Topic`,
+        type: "message_queue",
+        technology: "Kafka DLQ Topic",
+        responsibility: "Captures poison-pill stream events after bounded consumer retry exhaustion.",
+        requirements: [secondReq],
+        messaging: {
+          delivery_semantics: "at_least_once",
+          overload_policy: "alert_on_message_present",
+          retention_period: "14d",
+        },
       },
       {
         id: `${baseName}-read-store`,
@@ -269,6 +387,14 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "Redis Cluster / ScyllaDB",
         responsibility: "High-speed key-value cache serving read query service.",
         requirements: ["NFR-LATENCY-001"],
+        deployment: {
+          replicas: 3,
+          platform: "Redis Cluster / ScyllaDB",
+        },
+        data: {
+          ownership: `${baseName}-read-projection-domain`,
+          retention: "24h",
+        },
       },
       {
         id: `${baseName}-audit-store`,
@@ -277,6 +403,12 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         technology: "S3 / GCS Data Lake",
         responsibility: "Long-term cold archive for historical compliance.",
         requirements: [primaryReq],
+        data: {
+          ownership: `${baseName}-audit-archive-domain`,
+          storage_type: "object",
+          retention: "365d",
+          backup_frequency: "continuous",
+        },
       },
     ],
     connections: [
@@ -342,6 +474,14 @@ export function synthesizeHeuristicAlternatives(brief: SystemDesignBrief) {
         protocol: "asynchronous",
         transport: "https",
         purpose: "Flush batch intervals to long-term cold archive.",
+      },
+      {
+        id: "conn-consumer-to-dlq",
+        from: `${baseName}-stream-consumers`,
+        to: `${baseName}-stream-dlq`,
+        protocol: "asynchronous",
+        transport: "kafka",
+        purpose: "Route unprocessable poison events to dead-letter topic after retry exhaustion.",
       },
     ],
     decisions: [

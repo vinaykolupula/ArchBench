@@ -93,5 +93,48 @@ describe("ArchEval Orchestrator & JustEnough Architecture", () => {
     expect(altEval.justEnough.evolutionTriggers).toHaveLength(1);
     expect(altEval.justEnough.evolutionTriggers[0].id).toBe("TRIG-01");
   });
+
+  it("ignores unknown requirement IDs when computing requirement coverage", () => {
+    const specWithTwoReqs: ArchSpec = {
+      ...spec,
+      system: {
+        ...spec.system,
+        requirements: [
+          { id: "REQ-01", category: "functional", priority: "must", statement: "Create orders." },
+          { id: "REQ-02", category: "reliability", priority: "must", statement: "Handle retries." },
+        ],
+      },
+      architecture: {
+        alternatives: [
+          {
+            ...spec.architecture.alternatives[0],
+            components: [
+              {
+                id: "app",
+                type: "application",
+                responsibility: "API",
+                requirements: ["REQ-01", "REQ-TYPO-DOES-NOT-EXIST"],
+              },
+              {
+                id: "db",
+                type: "relational_database",
+                responsibility: "DB",
+                requirements: ["REQ-01"],
+                data: { ownership: "order-domain" },
+              },
+            ],
+            decisions: [],
+          },
+        ],
+      },
+    };
+    const g = new ArchitectureGraph(specWithTwoReqs.architecture.alternatives[0]);
+    const res = evaluateArchitecture(specWithTwoReqs, specWithTwoReqs, new Map([["monolith", g]]));
+    const cov = res.alternatives["monolith"].summary.requirementCoverage;
+    expect(cov.total).toBe(2);
+    expect(cov.mapped).toBe(1);
+    expect(cov.unmappedMust).toBe(1);
+    expect(cov.percentage).toBe(50);
+  });
 });
 

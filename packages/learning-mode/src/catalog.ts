@@ -6,6 +6,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "Backpressure & Queue Management",
     title: "Handling Producer-Consumer Speed Asymmetry",
     ruleIds: ["SCAL-001"],
+    plainEnglishAnalogy:
+      "Think of pouring water through a narrow kitchen funnel: if you pour faster than the spout drains, the funnel overflows unless you tell the person holding the pitcher to slow down.",
     summary: "Mechanisms to bound buffer accumulation and signal upstream producers when consumer throughput degrades.",
     whyItMatters: "Without backpressure, producers that outpace consumers cause unbounded memory or disk backlog growth. A transient downstream slowdown turns into hours of catastrophic recovery delay.",
     concreteFailureExample: "During an external email provider slowdown, API acceptance continues at 5,000 req/sec while workers only dispatch 1,000 req/sec. The queue swells to 20 million messages, exhausts node memory, and causes consumer timeouts.",
@@ -17,8 +19,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Run an analytical or discrete scenario simulating a 5x worker slowdown for 15 minutes to verify backlog bounds and recovery time within RTO.",
     furtherReading: [
-      "Reactive Streams Specification (reactive-streams.org)",
-      "Designing Data-Intensive Applications (Martin Kleppmann, Ch. 11)",
+      "Bounded-Buffer Backpressure & HTTP 429 Load Shedding",
+      "ArchBench Rule SCAL-001",
     ],
   },
   {
@@ -26,6 +28,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "At-Least-Once Delivery & Idempotency",
     title: "Guaranteeing Correctness Under Duplicate Delivery",
     ruleIds: ["REL-002"],
+    plainEnglishAnalogy:
+      "Pressing an elevator Call button 5 times in a row only summons one elevator, because the elevator remembers a request is already in progress. Idempotency-Keys work the exact same way for payments and webhooks.",
     summary: "Ensuring operations yield identical state effects regardless of how many times duplicate requests or messages are executed.",
     whyItMatters: "Distributed messaging systems (SQS, Kafka, RabbitMQ) cannot guarantee exactly-once delivery across network partitions without distributed two-phase commit. Network retries frequently produce duplicate deliveries.",
     concreteFailureExample: "A worker charges a user credit card and updates the database, but crashes before acknowledging the message to the queue. The queue redelivers the message to another worker replica, double-charging the customer.",
@@ -36,8 +40,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Run a scenario delivering identical messages concurrently or sequentially to verify deduplication behavior.",
     furtherReading: [
-      "AWS Architecture Blog: Making retries safe with idempotent APIs",
-      "Stripe Engineering: Designing robust and predictable APIs with idempotency",
+      "At-Least-Once Delivery & Atomic Idempotency Keys",
+      "ArchBench Rule REL-002",
     ],
   },
   {
@@ -45,6 +49,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "Transactional Outbox Pattern & Dual Writes",
     title: "Atomic State Updates Across Database and Message Brokers",
     ruleIds: ["DATA-001"],
+    plainEnglishAnalogy:
+      "Instead of dropping cash in one mailbox and walking across the street to drop the receipt in another (where you might trip halfway!), put both cash and receipt inside the SAME sealed envelope.",
     summary: "Writing state changes and outbound event messages atomically in a single local database transaction.",
     whyItMatters: "Direct dual writes (writing to SQL DB then publishing to Kafka/RabbitMQ in an application handler) lack atomic commit guarantees. Crashing between the two steps results in permanent state desynchronization.",
     concreteFailureExample: "An API handler saves an order to PostgreSQL, but the server crashes before it can emit the 'OrderCreated' event to RabbitMQ. The customer sees their order confirmed, but the warehouse shipping worker never receives the event.",
@@ -55,8 +61,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Inspect component connection graphs for dual outgoing edges to both database and message queue without an Outbox ADR.",
     furtherReading: [
-      "Microservices Patterns (Chris Richardson, Ch. 3)",
-      "Debezium Documentation: Outbox Pattern",
+      "Transactional Outbox Atomicity & CDC Relay Patterns",
+      "ArchBench Rule DATA-001",
     ],
   },
   {
@@ -64,6 +70,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "Distributed Latency & Synchronous Call Coupling",
     title: "Preventing Compounding Latency and Availability Degradation",
     ruleIds: ["STRUC-001"],
+    plainEnglishAnalogy:
+      "Waiting on the phone while Support puts you on hold to call Billing, who puts Support on hold to call Shipping: one slow desk freezes every caller waiting at the front of the line.",
     summary: "Avoiding deep synchronous request chains where service A calls B, which calls C, which calls D before returning.",
     whyItMatters: "Synchronous call chains compound network latency and multiply failure probability. If each service has 99% availability, a 4-hop chain has only 0.99^4 = 96% availability.",
     concreteFailureExample: "A user checkout request synchronously calls the Auth Service, Cart Service, Inventory Service, and Payment Gateway. Any slowdown in Payment blocks threads across Cart and Auth, causing a cascading outage.",
@@ -74,8 +82,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Run graph critical-path analysis to ensure synchronous call depth from external ingress to sink does not exceed 3 hops.",
     furtherReading: [
-      "Google SRE Book: Addressing Cascading Failures",
-      "Release It! (Michael Nygard, Ch. 5: Stability Patterns)",
+      "Dean & Barroso: The Tail at Scale (CACM 2013)",
+      "ArchBench Rules STRUC-001 & STRUC-002",
     ],
   },
   {
@@ -83,6 +91,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "Single Point of Failure (SPOF) & Articulation Points",
     title: "Eliminating Topological Chokepoints",
     ruleIds: ["REL-004"],
+    plainEnglishAnalogy:
+      "A suspension bridge held up by ONE single anchor bolt: no matter how thick the other steel cables are, if that single bolt snaps, nobody can cross.",
     summary: "Identifying nodes whose failure partitions the system network and ensuring they possess active redundancy.",
     whyItMatters: "A system is only as reliable as its weakest non-redundant component. If an articulation point has only 1 replica, any host failure causes total service disruption.",
     concreteFailureExample: "A system runs an API gateway with 1 container instance. An AWS node reboot takes the gateway offline for 4 minutes, failing 100% of incoming customer traffic despite backend services being healthy.",
@@ -93,7 +103,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Execute Hopcroft-Tarjan articulation point analysis on the architecture graph and cross-reference with deployment replica counts.",
     furtherReading: [
-      "AWS Well-Architected Framework: Reliability Pillar",
+      "Hopcroft-Tarjan Graph Articulation Points & Multi-AZ Redundancy",
+      "ArchBench Rule REL-004",
     ],
   },
   {
@@ -101,6 +112,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "Retry Storms & Exponential Backoff with Jitter",
     title: "Protecting Failing Downstream Systems from Overload",
     ruleIds: ["REL-001"],
+    plainEnglishAnalogy:
+      "If 1,000 callers hit redial at the exact same millisecond after a cafe's phone line drops, they crash the phone again. Waiting progressively longer plus randomizing each caller's wait lets the cafe breathe.",
     summary: "Bounding retry attempts and randomizing backoff intervals to prevent thundering herd behavior.",
     whyItMatters: "When an external service experiences transient degradation, thousands of client workers retrying immediately and continuously turn a minor hiccup into a prolonged, catastrophic total outage.",
     concreteFailureExample: "A payment gateway experiences a 10-second latency spike. 500 worker instances retry every second simultaneously with fixed backoff, hitting the gateway with 5,000 req/sec and crashing it completely.",
@@ -112,7 +125,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Inspect all component and connection retry policies to verify explicit max_attempts <= 10 and exponential backoff.",
     furtherReading: [
-      "AWS Architecture Blog: Exponential Backoff And Jitter",
+      "Full Jitter Exponential Backoff & Retry Budgets",
+      "ArchBench Rule REL-001",
     ],
   },
   {
@@ -120,6 +134,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "Dead-Letter Queues & Poison Message Quarantine",
     title: "Isolating Corrupted Messages to Protect Consumer Workers",
     ruleIds: ["REL-003"],
+    plainEnglishAnalogy:
+      "An airport baggage scanner pulls torn suitcases off onto a side repair belt (`DLQ`) so one broken bag never stops the whole luggage carousel forever.",
     summary: "Routing messages that exceed maximum delivery attempts to a secondary quarantine queue for offline diagnosis.",
     whyItMatters: "A 'poison pill' message (e.g. malformed JSON or unhandled null field) that crashes worker parsing will be retried infinitely without a DLQ, consuming 100% of worker CPU and stalling all valid traffic.",
     concreteFailureExample: "A client sends a notification with an invalid Unicode character. Every worker that pulls it crashes with an unhandled exception. The queue redelivers it forever, bringing down all 12 worker processes.",
@@ -130,7 +146,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Verify that all background workers consuming from queues define an explicit dead_letter_target.",
     furtherReading: [
-      "Enterprise Integration Patterns: Dead Letter Channel (Hohpe & Woolf)",
+      "Poison Pill Quarantine & Dead-Letter Replay Queues",
+      "ArchBench Rule REL-003",
     ],
   },
   {
@@ -138,6 +155,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     concept: "JustEnough Architecture & Occam's Razor",
     title: "Earning Complexity Through Measurable Requirements",
     ruleIds: ["REQ-COV-001", "REQ-COV-002", "STRUC-002"],
+    plainEnglishAnalogy:
+      "Don't buy an 18-wheeler tractor-trailer to deliver neighborhood pizzas — start with a reliable delivery car (`Modular Monolith`) and upgrade only when measured volume proves you need it.",
     summary: "Selecting the least complex architecture that demonstrably satisfies known requirements and operating constraints.",
     whyItMatters: "Overengineering introduces immense cognitive load, operational fragility, multiple deployment pipelines, distributed debugging headaches, and high cloud bills without providing user value.",
     concreteFailureExample: "A startup team of 3 developers builds a 15-microservice Kubernetes system with Kafka for a product handling 2 requests per second. The team spends 80% of their time fixing deployment Helm charts and network policies instead of shipping product features.",
@@ -148,8 +167,8 @@ export const LEARNING_CATALOG: LearningCard[] = [
     ],
     verificationApproach: "Run JustEnough complexity assessment to inspect component-to-requirement traceability and detect speculative infrastructure.",
     furtherReading: [
-      "MonolithFirst (Martin Fowler)",
-      "Choose Boring Technology (Dan McKinley)",
+      "Modular Monolith First & Concrete Evolution Triggers",
+      "ArchBench JustEnough Rules REQ-COV-001/002",
     ],
   },
 ];

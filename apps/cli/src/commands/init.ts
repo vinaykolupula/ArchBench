@@ -4,7 +4,9 @@ import pc from "picocolors";
 
 export async function initCommand(projectName?: string, options: { output?: string } = {}) {
   const baseDir = process.env.INIT_CWD || process.cwd();
-  const name = projectName || "my-architecture-project";
+  const safeName = (projectName || "my-architecture-project")
+    .replace(/["\\\r\n]/g, "")
+    .trim() || "my-architecture-project";
   const targetPath = path.resolve(baseDir, options.output || "archspec.yaml");
 
   try {
@@ -18,8 +20,8 @@ export async function initCommand(projectName?: string, options: { output?: stri
 
   const template = `archbench:
   spec_version: "0.1"
-  project: "${name}"
-  description: "Starter architecture specification for ${name}"
+  project: "${safeName}"
+  description: "Starter architecture specification for ${safeName}"
   authors:
     - "Your Name <you@example.com>"
 
@@ -127,6 +129,7 @@ architecture:
         availability_percent: 99.9
 `;
 
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
   await fs.writeFile(targetPath, template, "utf-8");
   console.log(pc.green(`✔ Created ArchSpec template at ${targetPath}`));
   console.log(pc.cyan(`Next steps:`));
